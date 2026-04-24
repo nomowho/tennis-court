@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tennis Court · 網球課程管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:   #0A5C36;
+  --green2:  #0E7A48;
+  --green3:  #1A9458;
+  --purple:  #5B2D8E;
+  --purple2: #7B45B2;
+  --cream:   #F5F0E8;
+  --cream2:  #EDE6D6;
+  --gold:    #C9A84C;
+  --white:   #FFFFFF;
+  --dark:    #1A1A2E;
+  --text:    #2C2C3E;
+  --muted:   #7A7A8C;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'EB Garamond', 'Noto Serif TC', Georgia, serif;
+  background: var(--cream);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 59px,
+      rgba(10,92,54,0.06) 59px,
+      rgba(10,92,54,0.06) 60px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 59px,
+      rgba(10,92,54,0.06) 59px,
+      rgba(10,92,54,0.06) 60px
+    );
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--green);
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.header-top {
+  background: var(--purple);
+  padding: 5px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header-top span {
+  color: rgba(255,255,255,0.75);
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-family: 'EB Garamond', serif;
+}
+
+.header-main {
+  padding: 28px 24px 24px;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+/* Court decorative lines */
+.court-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.court-lines::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 2px;
+  background: rgba(255,255,255,0.12);
+  transform: translateY(-50%);
+}
+.court-lines::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: rgba(255,255,255,0.12);
+  transform: translateX(-50%);
+}
+.court-circle {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.1);
+}
+
+.wimbledon-icon {
+  font-size: 2.2rem;
+  margin-bottom: 6px;
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+}
+
+.header-title {
+  font-family: 'Playfair Display', serif;
+  color: var(--white);
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  line-height: 1.2;
+}
+.header-title span { color: var(--gold); }
+
+.header-sub {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.85rem;
+  margin-top: 6px;
+  letter-spacing: 0.08em;
+  font-style: italic;
+}
+
+.header-divider {
+  height: 5px;
+  background: linear-gradient(90deg, var(--purple), var(--purple2), var(--gold), var(--purple2), var(--purple));
+}
+
+/* ── NET DECORATION ── */
+.net-bar {
+  background: var(--green2);
+  padding: 8px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+.net-pattern {
+  color: rgba(255,255,255,0.2);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  font-family: monospace;
+  white-space: nowrap;
+}
+.net-center {
+  background: var(--cream2);
+  color: var(--green);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  padding: 3px 14px;
+  border-radius: 2px;
+  font-family: 'Playfair Display', serif;
+  white-space: nowrap;
+}
+
+/* ── CONTAINER ── */
+.container { max-width: 920px; margin: 0 auto; padding: 24px 16px 40px; }
+
+/* ── SUMMARY ── */
+.summary-label {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--purple);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+@media(min-width: 600px) { .summary-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.summary-card {
+  background: var(--white);
+  border-radius: 4px;
+  padding: 18px 14px;
+  text-align: center;
+  border: 1.5px solid var(--cream2);
+  border-top: 4px solid var(--purple);
+  box-shadow: 0 2px 12px rgba(91,45,142,0.08);
+  position: relative;
+  overflow: hidden;
+}
+.summary-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--green), var(--green2));
+}
+.summary-card .player-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.05em;
+}
+.summary-card .stat {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 6px;
+  font-style: italic;
+}
+.summary-card .amount {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--purple);
+  margin-top: 8px;
+}
+.summary-card .amount.cleared { color: var(--green2); }
+.summary-card .paid-tag {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 10px;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  font-family: 'Playfair Display', serif;
+}
+.summary-card .paid-tag.ok { background: #E8F5EE; color: var(--green); border: 1px solid #B8DEC9; }
+.summary-card .paid-tag.due { background: #F3EDF8; color: var(--purple); border: 1px solid #D4B8E8; }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--green);
+}
+.section-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.05em;
+}
+.section-header h2 em {
+  color: var(--purple);
+  font-style: normal;
+  font-size: 0.8rem;
+  margin-left: 8px;
+}
+
+.btn-add {
+  background: var(--purple);
+  color: var(--white);
+  border: none;
+  border-radius: 3px;
+  padding: 8px 18px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  font-family: 'Playfair Display', serif;
+  transition: background 0.2s, transform 0.1s;
+  box-shadow: 0 2px 8px rgba(91,45,142,0.25);
+}
+.btn-add:hover { background: var(--green); transform: translateY(-1px); }
+
+/* ── SESSION CARD ── */
+.session-card {
+  background: var(--white);
+  border-radius: 4px;
+  border: 1.5px solid var(--cream2);
+  margin-bottom: 18px;
+  overflow: hidden;
+  box-shadow: 0 3px 14px rgba(10,92,54,0.07);
+}
+
+.session-header {
+  background: linear-gradient(135deg, var(--green) 0%, var(--green2) 60%, var(--green3) 100%);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.session-header::after {
+  content: '⬤';
+  position: absolute;
+  right: -20px;
+  bottom: -30px;
+  font-size: 100px;
+  color: rgba(255,255,255,0.04);
+  pointer-events: none;
+}
+.session-date-wrap {}
+.session-date {
+  font-family: 'Playfair Display', serif;
+  color: var(--white);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.session-date .today-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: pulse 1.4s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.6; transform:scale(1.3); }
+}
+.session-time {
+  color: rgba(255,255,255,0.75);
+  font-size: 0.78rem;
+  margin-top: 2px;
+  font-style: italic;
+}
+.session-meta { display: flex; gap: 10px; align-items: center; }
+.fee-badge {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--white);
+  border-radius: 3px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-family: 'Playfair Display', serif;
+  letter-spacing: 0.05em;
+}
+.delete-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7);
+  border-radius: 3px;
+  padding: 4px 9px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: all 0.2s;
+}
+.delete-btn:hover { background: rgba(220,53,69,0.4); color: white; border-color: transparent; }
+
+/* Purple stripe accent */
+.session-stripe {
+  height: 4px;
+  background: linear-gradient(90deg, var(--purple), var(--purple2), var(--gold), var(--purple2), var(--purple));
+}
+
+.session-body { padding: 18px; }
+
+/* ── STUDENTS GRID ── */
+.students-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media(min-width: 520px) { .students-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.student-card {
+  border: 1.5px solid var(--cream2);
+  border-radius: 4px;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: var(--cream);
+  transition: all 0.2s;
+}
+.student-card.attending {
+  border-color: var(--green2);
+  background: #F0FBF4;
+}
+.student-card.absent {
+  border-color: #CDB8DF;
+  background: #FAF4FF;
+  opacity: 0.75;
+}
+
+.player-initial {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--white);
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+.student-card.absent .player-initial { background: var(--purple); }
+
+.student-name-card {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.05em;
+}
+
+/* Toggle */
+.toggle-group {
+  display: flex;
+  border: 1.5px solid #CDD6DF;
+  border-radius: 3px;
+  overflow: hidden;
+  width: 100%;
+}
+.toggle-btn {
+  flex: 1;
+  padding: 5px 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: #F7F9FB;
+  color: var(--muted);
+  transition: all 0.15s;
+  font-family: 'Noto Serif TC', serif;
+  letter-spacing: 0.05em;
+}
+.toggle-btn:first-child { border-right: 1px solid #CDD6DF; }
+.toggle-btn.active-attend { background: var(--green); color: white; border-color: transparent; }
+.toggle-btn.active-absent { background: var(--purple); color: white; border-color: transparent; }
+
+/* Payment */
+.payment-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.payment-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  cursor: pointer;
+  font-style: italic;
+  user-select: none;
+  font-family: 'EB Garamond', serif;
+}
+.payment-label input[type="checkbox"] {
+  accent-color: var(--green);
+  width: 13px; height: 13px;
+  cursor: pointer;
+}
+.payment-label.paid { color: var(--green); font-weight: 600; font-style: normal; }
+.per-cost {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: 'Playfair Display', serif;
+}
+.per-cost.owed { color: var(--purple); font-weight: 700; }
+.per-cost.paid-cost { color: var(--green2); font-weight: 600; }
+
+/* Note */
+.session-note {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cream2);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.note-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+  white-space: nowrap;
+}
+.note-input {
+  flex: 1;
+  border: 1px solid var(--cream2);
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--cream);
+  font-family: 'EB Garamond', serif;
+}
+.note-input:focus { outline: none; border-color: var(--green); background: white; }
+
+/* Past toggle */
+.past-toggle { text-align: center; margin: 4px 0 20px; }
+.past-toggle button {
+  background: none;
+  border: 1.5px solid #CDB8DF;
+  color: var(--purple);
+  border-radius: 3px;
+  padding: 7px 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: 'Playfair Display', serif;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+.past-toggle button:hover { background: var(--purple); color: white; }
+
+/* Empty */
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 50px 0;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,30,18,0.65);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(3px);
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--white);
+  border-radius: 4px;
+  padding: 0;
+  width: 92%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  overflow: hidden;
+}
+.modal-header {
+  background: var(--green);
+  padding: 16px 22px;
+  font-family: 'Playfair Display', serif;
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.modal-header-stripe {
+  height: 4px;
+  background: linear-gradient(90deg, var(--purple), var(--gold), var(--purple));
+}
+.modal-body { padding: 22px 22px 20px; }
+
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--green);
+  margin-bottom: 6px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: 'Playfair Display', serif;
+}
+.form-group input {
+  width: 100%;
+  border: 1.5px solid var(--cream2);
+  border-radius: 3px;
+  padding: 9px 12px;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--cream);
+  font-family: 'EB Garamond', serif;
+  transition: border-color 0.2s;
+}
+.form-group input:focus { outline: none; border-color: var(--green); background: white; }
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.btn-cancel {
+  background: var(--cream2);
+  color: var(--muted);
+  border: none;
+  border-radius: 3px;
+  padding: 9px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Playfair Display', serif;
+}
+.btn-confirm {
+  background: var(--purple);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  padding: 9px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Playfair Display', serif;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(91,45,142,0.3);
+  transition: background 0.2s;
+}
+.btn-confirm:hover { background: var(--green); }
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 16px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: 'Playfair Display', serif;
+  border-top: 1px solid var(--cream2);
+  margin-top: 10px;
+}
+.wimbledon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--white);
+  border: 1.5px solid var(--cream2);
+  border-radius: 3px;
+  padding: 4px 14px;
+  font-size: 0.7rem;
+  color: var(--green);
+  font-family: 'Playfair Display', serif;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+.stripe-mini {
+  display: inline-block;
+  width: 40px; height: 4px;
+  background: linear-gradient(90deg, var(--green), var(--purple), var(--gold));
+  border-radius: 2px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <span>Friday Evening · 19:00 — 21:00</span>
+    <span style="display:flex;align-items:center;gap:6px;">
+      <span id="liveDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#aaa;transition:background 0.4s;"></span>
+      <span id="liveLabel" style="font-size:0.68rem;letter-spacing:0.12em;opacity:0.85;">Connecting…</span>
+    </span>
+  </div>
+  <div class="header-main">
+    <div class="court-lines"><div class="court-circle"></div></div>
+    <span class="wimbledon-icon">🎾</span>
+    <div class="header-title">Tennis <span>Court</span></div>
+    <div class="header-sub">Course Schedule & Payment Tracker</div>
+  </div>
+  <div class="header-divider"></div>
+  <div class="net-bar">
+    <div class="net-pattern">╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫</div>
+    <div class="net-center">THE NET</div>
+    <div class="net-pattern">╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="summary-label">Player Standing</div>
+  <div id="summaryGrid" class="summary-grid"></div>
+
+  <div class="section-header">
+    <h2>Match Schedule <em id="sessionCount"></em></h2>
+    <button class="btn-add" onclick="openModal()">＋ 新增課程</button>
+  </div>
+
+  <div id="sessionList"></div>
+
+  <div class="past-toggle">
+    <button id="pastToggleBtn" onclick="togglePast()">顯示過去課程</button>
+  </div>
+
+</div>
+
+<footer>
+  <div>
+    <div class="wimbledon-badge"><span class="stripe-mini"></span>Tennis Court · 網球課程管理<span class="stripe-mini"></span></div>
+    <div>All England · Lawn Tennis · Club</div>
+  </div>
+</footer>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">📅 新增課程日期</div>
+    <div class="modal-header-stripe"></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Date 日期</label>
+        <input type="date" id="newDate">
+      </div>
+      <div class="form-group">
+        <label>Time 時間</label>
+        <input type="text" id="newTime" value="19:00–21:00">
+      </div>
+      <div class="form-group">
+        <label>Note 備註</label>
+        <input type="text" id="newNote" placeholder="加課、補課、場地變更…">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">取消</button>
+        <button class="btn-confirm" onclick="addSession()">確認新增</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// ── 請把下方換成你的 Firebase 專案設定 ──────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyB0nqFFS6-MIuWAM0XDnURRnxg57JZF5Sc",
+  authDomain:        "tennis-court-nomo.firebaseapp.com",
+  databaseURL:       "https://tennis-court-nomo-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "tennis-court-nomo",
+  storageBucket:     "tennis-court-nomo.firebasestorage.app",
+  messagingSenderId: "761622662336",
+  appId:             "1:761622662336:web:71f581dbaddf56b9287125"
+};
+// ────────────────────────────────────────────────────────────────
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const sessionsRef = db.ref('tennis/sessions');
+
+const STUDENTS = ['NOMO','JENNY','WILL','EVEN'];
+const PRICES = { 1:4200, 2:4200, 3:3400, 4:4200 };
+
+let showPast = false;
+let data = { sessions: [] };
+let dbReady = false;
+
+// ── 連線狀態指示器 ──
+const connRef = db.ref('.info/connected');
+connRef.on('value', snap => {
+  const dot = document.getElementById('liveDot');
+  const lbl = document.getElementById('liveLabel');
+  if (!dot) return;
+  if (snap.val()) {
+    dot.style.background = '#52b788';
+    lbl.textContent = 'Live';
+  } else {
+    dot.style.background = '#e53e3e';
+    lbl.textContent = 'Offline';
+  }
+});
+
+// ── 即時監聽 Firebase ──
+sessionsRef.on('value', snapshot => {
+  const val = snapshot.val();
+  if (val) {
+    data.sessions = Object.values(val);
+  } else if (!dbReady) {
+    // 第一次：初始化全年課表
+    data.sessions = getFridaysUntilYearEnd().map(d => makeSession(d,'19:00–21:00',''));
+    save();
+  }
+  dbReady = true;
+  render();
+});
+
+function getFridaysUntilYearEnd() {
+  const result = [];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yearEnd = new Date(today.getFullYear(), 11, 31);
+  const d = new Date(today);
+  const diff = (5 - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + (diff === 0 ? 0 : diff) - 7);
+  while (d <= yearEnd) {
+    d.setDate(d.getDate() + 7);
+    if (d >= today && d <= yearEnd) result.push(d.toISOString().split('T')[0]);
+  }
+  return result;
+}
+
+function makeSession(date, time, note) {
+  return {
+    id: date+'_'+Math.random().toString(36).slice(2,7),
+    date, time: time||'19:00–21:00', note: note||'',
+    students: Object.fromEntries(STUDENTS.map(s=>[s,{attend:true,paid:false}]))
+  };
+}
+
+function save() {
+  const obj = {};
+  data.sessions.forEach(s => { obj[s.id] = s; });
+  sessionsRef.set(obj);
+}
+
+function getCount(s) { return STUDENTS.filter(n=>s.students[n].attend).length; }
+function getTotal(s) { const n=getCount(s); return PRICES[n]||0; }
+function getPerPerson(s) { const n=getCount(s); return n?Math.round(getTotal(s)/n):0; }
+function isPast(d) { return d < new Date().toISOString().split('T')[0]; }
+function isToday(d) { return d === new Date().toISOString().split('T')[0]; }
+
+function formatDate(ds) {
+  const d = new Date(ds+'T00:00:00');
+  const days=['日','一','二','三','四','五','六'];
+  return `${d.getFullYear()} · ${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} (週${days[d.getDay()]})`;
+}
+
+function render() { renderSummary(); renderSessions(); }
+
+function renderSummary() {
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = '';
+  STUDENTS.forEach(name => {
+    let owed=0, paid=0, sessions=0;
+    data.sessions.forEach(s => {
+      if (!s.students[name].attend) return;
+      const c = getPerPerson(s); sessions++;
+      s.students[name].paid ? paid+=c : owed+=c;
+    });
+    const clear = owed===0;
+    grid.innerHTML += `
+      <div class="summary-card">
+        <div class="player-name">${name}</div>
+        <div class="stat">${sessions} sessions attended</div>
+        <div class="amount${clear?' cleared':''}">
+          ${clear ? '✓ Settled' : `$ ${owed.toLocaleString()}`}
+        </div>
+        <div class="paid-tag ${clear?'ok':'due'}">
+          已付 $${paid.toLocaleString()}
+        </div>
+      </div>`;
+  });
+}
+
+function renderSessions() {
+  const list = document.getElementById('sessionList');
+  const btn = document.getElementById('pastToggleBtn');
+  const countEl = document.getElementById('sessionCount');
+  let sorted = [...data.sessions].sort((a,b)=>a.date.localeCompare(b.date));
+  let filtered = showPast ? sorted : sorted.filter(s=>!isPast(s.date));
+  const pastCount = sorted.filter(s=>isPast(s.date)).length;
+  btn.textContent = showPast ? '隱藏過去課程' : `顯示過去課程（${pastCount} 堂）`;
+  countEl.textContent = `${filtered.length} sessions`;
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state">No sessions found · 尚無課程記錄</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => {
+    const per = getPerPerson(s);
+    const total = getTotal(s);
+    const count = getCount(s);
+    const past = isPast(s.date);
+    const today = isToday(s.date);
+
+    const cards = STUDENTS.map(name => {
+      const st = s.students[name];
+      return `
+        <div class="student-card ${st.attend?'attending':'absent'}">
+          <div class="player-initial">${name[0]}</div>
+          <div class="student-name-card">${name}</div>
+          <div class="toggle-group">
+            <button class="toggle-btn ${st.attend?'active-attend':''}"
+              onclick="setAttend('${s.id}','${name}',true)">出席</button>
+            <button class="toggle-btn ${!st.attend?'active-absent':''}"
+              onclick="setAttend('${s.id}','${name}',false)">請假</button>
+          </div>
+          ${st.attend ? `
+          <div class="payment-row">
+            <label class="payment-label ${st.paid?'paid':''}">
+              <input type="checkbox" ${st.paid?'checked':''}
+                onchange="setPaid('${s.id}','${name}',this.checked)">
+              ${st.paid ? '✓ 已繳費' : '未繳費'}
+            </label>
+            <div class="per-cost ${st.paid?'paid-cost':'owed'}">
+              $ ${per.toLocaleString()}
+            </div>
+          </div>` : `<div class="per-cost" style="font-style:italic;color:var(--muted)">— Absent —</div>`}
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="session-card" id="card_${s.id}" style="${past&&!today?'opacity:0.82':''}">
+        <div class="session-header">
+          <div class="session-date-wrap">
+            <div class="session-date">
+              ${today?'<span class="today-dot"></span>':''}${formatDate(s.date)}
+            </div>
+            <div class="session-time">⏱ ${s.time}${s.note?' · '+s.note:''}</div>
+          </div>
+          <div class="session-meta">
+            <div class="fee-badge">${count} players · $${total.toLocaleString()}</div>
+            <button class="delete-btn" onclick="deleteSession('${s.id}')">✕</button>
+          </div>
+        </div>
+        <div class="session-stripe"></div>
+        <div class="session-body">
+          <div class="students-grid">${cards}</div>
+          <div class="session-note">
+            <span class="note-label">Note ·</span>
+            <input class="note-input" type="text" value="${s.note}"
+              placeholder="加課、補課、場地變更、教練費調整…"
+              onchange="setNote('${s.id}',this.value)">
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setAttend(id,name,val) {
+  const s=data.sessions.find(x=>x.id===id);
+  s.students[name].attend=val;
+  if(!val) s.students[name].paid=false;
+  save(); render();
+}
+function setPaid(id,name,val) {
+  data.sessions.find(x=>x.id===id).students[name].paid=val;
+  save(); render();
+}
+function setNote(id,val) {
+  data.sessions.find(x=>x.id===id).note=val;
+  save();
+}
+function deleteSession(id) {
+  if(!confirm('確定刪除這堂課程？')) return;
+  data.sessions=data.sessions.filter(s=>s.id!==id);
+  save(); render();
+}
+function togglePast() { showPast=!showPast; renderSessions(); }
+
+function openModal() {
+  const d=new Date(); const diff=(5-d.getDay()+7)%7||7;
+  d.setDate(d.getDate()+diff);
+  document.getElementById('newDate').value=d.toISOString().split('T')[0];
+  document.getElementById('newTime').value='19:00–21:00';
+  document.getElementById('newNote').value='';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function addSession() {
+  const date=document.getElementById('newDate').value;
+  if(!date){alert('請選擇日期');return;}
+  if(data.sessions.find(s=>s.date===date)){alert('此日期已有課程');return;}
+  data.sessions.push(makeSession(date,document.getElementById('newTime').value,document.getElementById('newNote').value));
+  save(); render(); closeModal();
+}
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+render();
+</script>
+</body>
+</html>
