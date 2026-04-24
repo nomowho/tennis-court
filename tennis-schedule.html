@@ -831,8 +831,9 @@ function save() {
 function getCount(s) { return STUDENTS.filter(n=>s.students[n].attend).length; }
 function getTotal(s) { const n=getCount(s); return PRICES[n]||0; }
 function getPerPerson(s) { const n=getCount(s); return n?Math.round(getTotal(s)/n):0; }
-function isPast(d) { return d < new Date().toISOString().split('T')[0]; }
-function isToday(d) { return d === new Date().toISOString().split('T')[0]; }
+function localDateStr() { const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
+function isPast(d) { return d < localDateStr(); }
+function isToday(d) { return d === localDateStr(); }
 
 function formatDate(ds) {
   const d = new Date(ds+'T00:00:00');
