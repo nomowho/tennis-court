@@ -19,6 +19,8 @@
   --dark:    #1A1A2E;
   --text:    #2C2C3E;
   --muted:   #7A7A8C;
+  --rain:    #4A6FA5;
+  --rain2:   #6B8FC7;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -365,6 +367,58 @@ header {
 .collapse-arrow { color: rgba(255,255,255,0.8); font-size: 0.9rem; transition: transform 0.25s; display:inline-block; }
 .collapse-arrow.open { transform: rotate(90deg); }
 .collapse-summary { font-size: 0.75rem; margin-right: 8px; }
+
+/* ── RAINOUT ── */
+.session-card.rainout { opacity: 0.7; }
+.session-card.rainout .session-header {
+  background: linear-gradient(135deg, var(--rain) 0%, var(--rain2) 100%) !important;
+}
+.session-card.rainout .session-stripe {
+  background: linear-gradient(90deg, #4A6FA5, #8aafd4, #c8daf0, #8aafd4, #4A6FA5);
+}
+.rainout-banner {
+  text-align: center;
+  padding: 20px 0 12px;
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+}
+.rainout-banner span {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  color: var(--rain);
+  display: block;
+  margin-top: 4px;
+  letter-spacing: 0.12em;
+}
+.rainout-badge {
+  background: rgba(74,111,165,0.15);
+  color: var(--rain);
+  border: 1px solid rgba(74,111,165,0.3);
+  border-radius: 3px;
+  padding: 2px 10px;
+  font-size: 0.78rem;
+  font-family: 'Playfair Display', serif;
+  letter-spacing: 0.05em;
+}
+.btn-rainout {
+  background: rgba(74,111,165,0.12);
+  border: 1.5px solid rgba(74,111,165,0.4);
+  color: var(--rain);
+  border-radius: 4px;
+  padding: 7px 18px;
+  font-size: 0.82rem;
+  font-family: 'Playfair Display', serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+}
+.btn-rainout:hover { background: rgba(74,111,165,0.25); }
+.btn-rainout.active {
+  background: var(--rain);
+  color: white;
+  border-color: var(--rain);
+}
+.btn-rainout.active:hover { background: var(--rain2); }
 
 /* Purple stripe accent */
 .session-stripe {
@@ -884,9 +938,10 @@ function renderSessions() {
   }
 
   list.innerHTML = filtered.map(s => {
-    const per = getPerPerson(s);
-    const total = getTotal(s);
-    const count = getCount(s);
+    const rainout = !!s.rainout;
+    const per = rainout ? 0 : getPerPerson(s);
+    const total = rainout ? 0 : getTotal(s);
+    const count = rainout ? 0 : getCount(s);
     const past = isPast(s.date);
     const today = isToday(s.date);
 
@@ -916,13 +971,22 @@ function renderSessions() {
         </div>`;
     }).join('');
 
-    const collapsed = past && !today;
+    const collapsed = (past && !today) || rainout;
     const paidCount = STUDENTS.filter(n=>s.students[n].attend && s.students[n].paid).length;
     const attendCount = STUDENTS.filter(n=>s.students[n].attend).length;
     const allPaid = attendCount > 0 && paidCount === attendCount;
 
+    const headerBadge = rainout
+      ? `<span class="rainout-badge">🌧 雨天停課</span>`
+      : `<div class="fee-badge">${count} players · $${total.toLocaleString()}</div>`;
+
+    const headerRight = collapsed
+      ? `${!rainout ? `<span class="collapse-summary">${allPaid?'<span style="color:#b8ddc9">✓ 全額已繳</span>':`<span style="color:#f9c8d0">${paidCount}/${attendCount} 已繳</span>`}</span>` : ''}
+         <span class="collapse-arrow" id="arrow_${s.id}">▸</span>`
+      : `<button class="delete-btn" onclick="deleteSession('${s.id}')">✕</button>`;
+
     return `
-      <div class="session-card ${collapsed?'collapsed':''}" id="card_${s.id}">
+      <div class="session-card ${collapsed?'collapsed':''} ${rainout?'rainout':''}" id="card_${s.id}">
         <div class="session-header ${collapsed?'collapsible':''}" onclick="${collapsed?`toggleSession('${s.id}')`:''}" style="${collapsed?'cursor:pointer':''}">
           <div class="session-date-wrap">
             <div class="session-date">
@@ -931,21 +995,28 @@ function renderSessions() {
             <div class="session-time">⏱ ${s.time}${s.note?' · '+s.note:''}</div>
           </div>
           <div class="session-meta">
-            <div class="fee-badge">${count} players · $${total.toLocaleString()}</div>
-            ${collapsed ? `<span class="collapse-summary">${allPaid?'<span style="color:#b8ddc9">✓ 全額已繳</span>':`<span style="color:#f9c8d0">${paidCount}/${attendCount} 已繳</span>`}</span>` : ''}
-            ${collapsed ? `<span class="collapse-arrow" id="arrow_${s.id}">▸</span>` : `<button class="delete-btn" onclick="deleteSession('${s.id}')">✕</button>`}
+            ${headerBadge}
+            ${headerRight}
           </div>
         </div>
         <div class="session-stripe"></div>
         <div class="session-body" id="body_${s.id}" style="${collapsed?'display:none':''}">
-          <div class="students-grid">${cards}</div>
+          ${rainout
+            ? `<div class="rainout-banner">🌧<span>RAIN CANCELLATION</span></div>`
+            : `<div class="students-grid">${cards}</div>`
+          }
           <div class="session-note">
             <span class="note-label">Note ·</span>
             <input class="note-input" type="text" value="${s.note}"
               placeholder="加課、補課、場地變更、教練費調整…"
               onchange="setNote('${s.id}',this.value)">
           </div>
-          ${past&&!today?`<div style="text-align:right;margin-top:8px"><button class="delete-btn" style="background:rgba(220,53,69,0.15);color:#c0392b;border:1px solid #e0a0a0" onclick="deleteSession('${s.id}')">刪除此課程</button></div>`:''}
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">
+            <button class="btn-rainout ${rainout?'active':''}" onclick="setRainout('${s.id}',${!rainout})">
+              ${rainout ? '↩ 恢復上課' : '🌧 雨天停課'}
+            </button>
+            ${past&&!today?`<button class="delete-btn" style="background:rgba(220,53,69,0.15);color:#c0392b;border:1px solid #e0a0a0" onclick="deleteSession('${s.id}')">刪除此課程</button>`:''}
+          </div>
         </div>
       </div>`;
   }).join('');
@@ -964,6 +1035,10 @@ function setPaid(id,name,val) {
 function setNote(id,val) {
   data.sessions.find(x=>x.id===id).note=val;
   save();
+}
+function setRainout(id,val) {
+  data.sessions.find(x=>x.id===id).rainout=val;
+  save(); render();
 }
 function deleteSession(id) {
   if(!confirm('確定刪除這堂課程？')) return;
