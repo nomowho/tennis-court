@@ -796,7 +796,13 @@ function getFridaysUntilYearEnd() {
   d.setDate(d.getDate() + (diff === 0 ? 0 : diff) - 7);
   while (d <= yearEnd) {
     d.setDate(d.getDate() + 7);
-    if (d >= today && d <= yearEnd) result.push(d.toISOString().split('T')[0]);
+    if (d >= today && d <= yearEnd) {
+      // 用本地時間避免 UTC 轉換造成日期偏移
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      result.push(`${y}-${m}-${day}`);
+    }
   }
   return result;
 }
