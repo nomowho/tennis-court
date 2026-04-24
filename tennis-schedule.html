@@ -282,23 +282,26 @@ header {
 }
 .fee-record-del:hover { color: #c0392b; background: rgba(220,53,69,0.08); }
 .fee-player-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
-  padding: 6px 11px;
+  gap: 0 12px;
+  padding: 7px 11px;
   border-bottom: 1px solid rgba(0,0,0,0.04);
 }
 .fee-player-row:last-child { border-bottom: none; }
-.fee-player-name { font-size: 0.8rem; font-weight: 600; color: var(--text); }
-.fee-player-amt { font-size: 0.78rem; color: var(--muted); }
+.fee-player-name { font-size: 0.82rem; font-weight: 700; color: var(--text); letter-spacing: 0.03em; }
+.fee-player-amt { font-size: 0.82rem; color: var(--text); text-align: right; font-weight: 500; }
 .fee-player-check {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   cursor: pointer;
+  min-width: 52px;
+  justify-content: flex-end;
 }
-.fee-player-check input { cursor: pointer; accent-color: var(--purple); }
+.fee-player-check input { cursor: pointer; accent-color: var(--purple); width: 15px; height: 15px; }
 .fee-paid-label { color: var(--green); font-weight: 600; }
 .fee-unpaid-label { color: var(--muted); }
 .fee-record-summary {
@@ -907,10 +910,9 @@ footer {
           <div class="court-fee-add">
             <label>季別名稱</label>
             <input type="text" id="feeLabel" placeholder="例：2026 Q2（4月–6月）">
-            <label>場地總金額 $</label>
-            <input type="number" id="feeTotal" placeholder="例：19200" min="0">
-            <label>堂數</label>
-            <input type="number" id="feeSessions" placeholder="例：12" min="1">
+            <label>小時數（每小時 $800）</label>
+            <input type="number" id="feeHours" placeholder="例：24" min="1" oninput="updateFeePreview()">
+            <div id="feePreview" style="font-size:0.78rem;color:var(--purple);min-height:1.2em;padding:2px 0;"></div>
             <button class="btn-add-fee" onclick="addFeeRecord()">＋ 新增紀錄</button>
           </div>
           <div id="feeList"></div>
@@ -1067,22 +1069,33 @@ function formatDate(ds) {
 function render() { renderSummary(); renderSessions(); }
 
 // ── COURT FEE ──────────────────────────────────────────────────────
+function updateFeePreview() {
+  const h = parseInt(document.getElementById('feeHours').value);
+  const el = document.getElementById('feePreview');
+  if (h > 0) {
+    const total = h * 800;
+    const per = Math.round(total / 4);
+    el.textContent = `總計 $${total.toLocaleString()} · 每人 $${per.toLocaleString()}`;
+  } else {
+    el.textContent = '';
+  }
+}
 function addFeeRecord() {
   const label = document.getElementById('feeLabel').value.trim();
-  const total = parseInt(document.getElementById('feeTotal').value);
-  const sessions = parseInt(document.getElementById('feeSessions').value);
-  if (!label || !total || !sessions) { alert('請填寫季別、總金額、堂數'); return; }
+  const hours = parseInt(document.getElementById('feeHours').value);
+  if (!label || !hours) { alert('請填寫季別名稱與小時數'); return; }
+  const total = hours * 800;
   const rec = {
     id: 'fee_' + Date.now(),
     label,
     total,
-    sessions,
+    hours,
     paid: { NOMO:false, JENNY:false, WILL:false, EVEN:false }
   };
   feeRef.child(rec.id).set(rec);
   document.getElementById('feeLabel').value = '';
-  document.getElementById('feeTotal').value = '';
-  document.getElementById('feeSessions').value = '';
+  document.getElementById('feeHours').value = '';
+  document.getElementById('feePreview').textContent = '';
 }
 
 function setFeePaid(feeId, name, val) {
@@ -1120,7 +1133,7 @@ function renderFees() {
       <div class="fee-record-header">
         <div>
           <div class="fee-record-title">${rec.label}</div>
-          <div class="fee-record-meta">${rec.sessions} 堂 · 每人 $${perPerson.toLocaleString()}</div>
+          <div class="fee-record-meta">${rec.hours || rec.sessions || '?'} 小時 · 每人 $${perPerson.toLocaleString()}</div>
         </div>
         <button class="fee-record-del" onclick="deleteFeeRecord('${rec.id}')">✕</button>
       </div>
