@@ -359,6 +359,13 @@ header {
 }
 .delete-btn:hover { background: rgba(220,53,69,0.4); color: white; border-color: transparent; }
 
+/* ── COLLAPSE ── */
+.session-card.collapsed { opacity: 0.72; }
+.session-header.collapsible:hover { filter: brightness(1.12); }
+.collapse-arrow { color: rgba(255,255,255,0.8); font-size: 0.9rem; transition: transform 0.25s; display:inline-block; }
+.collapse-arrow.open { transform: rotate(90deg); }
+.collapse-summary { font-size: 0.75rem; margin-right: 8px; }
+
 /* Purple stripe accent */
 .session-stripe {
   height: 4px;
@@ -908,9 +915,14 @@ function renderSessions() {
         </div>`;
     }).join('');
 
+    const collapsed = past && !today;
+    const paidCount = STUDENTS.filter(n=>s.students[n].attend && s.students[n].paid).length;
+    const attendCount = STUDENTS.filter(n=>s.students[n].attend).length;
+    const allPaid = attendCount > 0 && paidCount === attendCount;
+
     return `
-      <div class="session-card" id="card_${s.id}" style="${past&&!today?'opacity:0.82':''}">
-        <div class="session-header">
+      <div class="session-card ${collapsed?'collapsed':''}" id="card_${s.id}">
+        <div class="session-header ${collapsed?'collapsible':''}" onclick="${collapsed?`toggleSession('${s.id}')`:''}" style="${collapsed?'cursor:pointer':''}">
           <div class="session-date-wrap">
             <div class="session-date">
               ${today?'<span class="today-dot"></span>':''}${formatDate(s.date)}
@@ -919,11 +931,12 @@ function renderSessions() {
           </div>
           <div class="session-meta">
             <div class="fee-badge">${count} players · $${total.toLocaleString()}</div>
-            <button class="delete-btn" onclick="deleteSession('${s.id}')">✕</button>
+            ${collapsed ? `<span class="collapse-summary">${allPaid?'<span style="color:#b8ddc9">✓ 全額已繳</span>':`<span style="color:#f9c8d0">${paidCount}/${attendCount} 已繳</span>`}</span>` : ''}
+            ${collapsed ? `<span class="collapse-arrow" id="arrow_${s.id}">▸</span>` : `<button class="delete-btn" onclick="deleteSession('${s.id}')">✕</button>`}
           </div>
         </div>
         <div class="session-stripe"></div>
-        <div class="session-body">
+        <div class="session-body" id="body_${s.id}" style="${collapsed?'display:none':''}">
           <div class="students-grid">${cards}</div>
           <div class="session-note">
             <span class="note-label">Note ·</span>
@@ -931,6 +944,7 @@ function renderSessions() {
               placeholder="加課、補課、場地變更、教練費調整…"
               onchange="setNote('${s.id}',this.value)">
           </div>
+          ${past&&!today?`<div style="text-align:right;margin-top:8px"><button class="delete-btn" style="background:rgba(220,53,69,0.15);color:#c0392b;border:1px solid #e0a0a0" onclick="deleteSession('${s.id}')">刪除此課程</button></div>`:''}
         </div>
       </div>`;
   }).join('');
@@ -956,6 +970,13 @@ function deleteSession(id) {
   save(); render();
 }
 function togglePast() { showPast=!showPast; renderSessions(); }
+function toggleSession(id) {
+  const body = document.getElementById('body_'+id);
+  const arrow = document.getElementById('arrow_'+id);
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+  if (arrow) arrow.classList.toggle('open', isHidden);
+}
 
 function openModal() {
   const d=new Date(); const diff=(5-d.getDay()+7)%7||7;
