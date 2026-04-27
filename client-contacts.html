@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>客戶聯絡資訊</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #F7F7F5;
+  --surface:  #FFFFFF;
+  --border:   #E5E5E2;
+  --text:     #1A1A1A;
+  --muted:    #888884;
+  --accent:   #1A1A1A;
+  --tag-bg:   #F0F0EE;
+  --hover:    #F4F4F2;
+  --danger:   #D94F3D;
+  --shadow:   0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg:0 4px 16px rgba(0,0,0,0.10);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--text);
+  color: #fff;
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left h1 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.header-left span {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  margin-left: 10px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary {
+  background: #fff;
+  color: #1a1a1a;
+}
+.btn-primary:hover { background: #eee; }
+
+.btn-ghost {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.2); }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-outline:hover { background: var(--hover); }
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-danger:hover { background: #c0392b; }
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+/* ── TOOLBAR ── */
+.toolbar {
+  padding: 16px 28px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+  max-width: 360px;
+}
+
+.search-wrap svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg);
+  outline: none;
+  transition: border 0.15s;
+}
+.search-input:focus { border-color: #999; }
+
+.filter-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 6px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: var(--tag-bg);
+  color: var(--muted);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.tag:hover { background: #e8e8e5; color: var(--text); }
+.tag.active {
+  background: var(--text);
+  color: #fff;
+  border-color: var(--text);
+}
+
+/* ── CONTACT COUNT ── */
+.count-bar {
+  padding: 10px 28px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── GRID ── */
+.grid {
+  padding: 4px 28px 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 18px 20px 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.15s;
+  position: relative;
+}
+.card:hover { box-shadow: var(--shadow-lg); }
+
+.card-industry {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  letter-spacing: 0.03em;
+}
+
+.card-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+.card-company {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.card-title {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.card-divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 12px;
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.card-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.card-row svg {
+  flex-shrink: 0;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.card-row a {
+  color: var(--text);
+  text-decoration: none;
+}
+.card-row a:hover { text-decoration: underline; }
+
+.card-note {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 5px;
+  padding: 7px 10px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.card-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* ── INDUSTRY COLORS ── */
+.ind-金融      { background: #EEF2FF; color: #3730A3; }
+.ind-精品鐘錶  { background: #FDF4E7; color: #92400E; }
+.ind-零售百貨  { background: #FFF0F0; color: #9B1C1C; }
+.ind-能源      { background: #ECFDF5; color: #065F46; }
+.ind-半導體    { background: #F0F9FF; color: #075985; }
+.ind-其他      { background: #F3F4F6; color: #374151; }
+
+/* ── EMPTY STATE ── */
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty p { font-size: 15px; margin-bottom: 6px; }
+.empty small { font-size: 13px; }
+
+/* ── MODAL ── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+.overlay.open { display: flex; }
+
+.drawer {
+  background: var(--surface);
+  width: 420px;
+  max-width: 100vw;
+  height: 100vh;
+  overflow-y: auto;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.drawer-header h2 { font-size: 16px; font-weight: 600; }
+
+.drawer-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 18px;
+  line-height: 1;
+}
+.drawer-close:hover { color: var(--text); background: var(--hover); }
+
+.drawer-body {
+  padding: 20px 24px;
+  flex: 1;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--surface);
+  outline: none;
+  transition: border 0.15s;
+  color: var(--text);
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #999; }
+.form-textarea { resize: vertical; min-height: 80px; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.drawer-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+}
+
+/* ── CSV MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border-radius: 12px;
+  width: 500px;
+  max-width: 95vw;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-header h3 { font-size: 15px; font-weight: 600; }
+
+.modal-body { padding: 20px 22px; }
+.modal-footer {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.file-drop {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 30px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--muted);
+}
+.file-drop:hover, .file-drop.drag { border-color: #999; background: var(--hover); }
+.file-drop-icon { font-size: 28px; margin-bottom: 8px; }
+.file-drop p { font-size: 13px; }
+.file-drop small { font-size: 12px; }
+
+.import-preview {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 10px 12px;
+  line-height: 1.6;
+}
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1a1a1a;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  opacity: 0;
+  transition: all 0.25s;
+  z-index: 999;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── CONFIRM DIALOG ── */
+#confirm-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+}
+#confirm-overlay.open { display: flex; }
+
+.confirm-box {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 24px;
+  width: 320px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+.confirm-box h4 { font-size: 15px; margin-bottom: 8px; }
+.confirm-box p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.confirm-box .btns { display: flex; gap: 10px; justify-content: center; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  header { padding: 14px 16px; }
+  .toolbar { padding: 12px 16px; }
+  .count-bar { padding: 8px 16px; }
+  .grid { padding: 4px 16px 32px; grid-template-columns: 1fr; }
+  .drawer { width: 100vw; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <h1>客戶聯絡資訊 <span id="sync-status">●</span></h1>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openImport()">📥 匯入 CSV</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📤 匯出</button>
+    <button class="btn btn-primary" onclick="openDrawer()">＋ 新增聯絡人</button>
+  </div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="search-input" id="search" type="text" placeholder="搜尋公司、姓名、備註…" oninput="render()">
+  </div>
+  <div class="filter-tags" id="filter-tags">
+    <span class="tag active" data-ind="全部" onclick="setFilter(this)">全部</span>
+    <span class="tag" data-ind="金融" onclick="setFilter(this)">金融</span>
+    <span class="tag" data-ind="精品鐘錶" onclick="setFilter(this)">精品鐘錶</span>
+    <span class="tag" data-ind="零售百貨" onclick="setFilter(this)">零售百貨</span>
+    <span class="tag" data-ind="能源" onclick="setFilter(this)">能源</span>
+    <span class="tag" data-ind="半導體" onclick="setFilter(this)">半導體</span>
+    <span class="tag" data-ind="其他" onclick="setFilter(this)">其他</span>
+  </div>
+</div>
+
+<div class="count-bar" id="count-bar">載入中…</div>
+
+<!-- GRID -->
+<div class="grid" id="grid"></div>
+
+<!-- DRAWER: 新增 / 編輯 -->
+<div class="overlay" id="drawer-overlay" onclick="handleOverlayClick(event)">
+  <div class="drawer">
+    <div class="drawer-header">
+      <h2 id="drawer-title">新增聯絡人</h2>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <input type="hidden" id="f-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">公司名稱 *</label>
+          <input class="form-input" id="f-company" placeholder="遠見天下文化">
+        </div>
+        <div class="form-group">
+          <label class="form-label">產業 *</label>
+          <select class="form-select" id="f-industry">
+            <option value="">請選擇</option>
+            <option>金融</option>
+            <option>精品鐘錶</option>
+            <option>零售百貨</option>
+            <option>能源</option>
+            <option>半導體</option>
+            <option>其他</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">姓名 *</label>
+          <input class="form-input" id="f-name" placeholder="王小明">
+        </div>
+        <div class="form-group">
+          <label class="form-label">部門</label>
+          <input class="form-input" id="f-dept" placeholder="行銷部">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">職位</label>
+        <input class="form-input" id="f-title" placeholder="廣告業務總監">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">電話</label>
+          <input class="form-input" id="f-phone" type="tel" placeholder="0912-345-678">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="f-email" type="email" placeholder="name@example.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">地址</label>
+        <input class="form-input" id="f-address" placeholder="台北市中山區…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">備註</label>
+        <textarea class="form-textarea" id="f-note" placeholder="合作狀態、重要備忘…"></textarea>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn btn-outline" onclick="closeDrawer()">取消</button>
+      <button class="btn btn-primary" onclick="saveContact()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV 匯入 MODAL -->
+<div class="modal-overlay" id="import-overlay" onclick="handleImportOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>匯入 CSV</h3>
+      <button class="drawer-close" onclick="closeImport()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+        CSV 欄位順序：<strong>公司、產業、姓名、部門、職位、電話、Email、地址、備註</strong><br>
+        第一列為標題列，會自動跳過。
+      </p>
+      <div style="margin-bottom:10px;">
+        <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">⬇ 下載範本 CSV</button>
+      </div>
+      <div class="file-drop" id="file-drop" onclick="document.getElementById('csv-input').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event)">
+        <div class="file-drop-icon">📁</div>
+        <p>點擊選擇 CSV 檔案</p>
+        <small>或拖曳到此處</small>
+      </div>
+      <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+      <div class="import-preview" id="import-preview" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeImport()">取消</button>
+      <button class="btn btn-primary" id="import-confirm-btn" onclick="confirmImport()" style="display:none">匯入</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <h4>確認刪除</h4>
+    <p id="confirm-msg">確定要刪除這筆聯絡人嗎？</p>
+    <div class="btns">
+      <button class="btn btn-outline" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-danger" id="confirm-ok">刪除</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// ── Firebase 設定 ─────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyB0nqFFS6-MIuWAM0XDnURRnxg57JZF5Sc",
+  authDomain:        "tennis-court-nomo.firebaseapp.com",
+  databaseURL:       "https://tennis-court-nomo-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "tennis-court-nomo",
+  storageBucket:     "tennis-court-nomo.firebasestorage.app",
+  messagingSenderId: "761622662336",
+  appId:             "1:761622662336:web:71f581dbaddf56b9287125"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const ref = db.ref('contacts');
+
+// ── State ──────────────────────────────────────────────────────
+let contacts = {};
+let activeFilter = '全部';
+let importData = [];
+
+// ── Firebase sync ──────────────────────────────────────────────
+ref.on('value', snap => {
+  contacts = snap.val() || {};
+  render();
+  document.getElementById('sync-status').style.color = '#4ade80';
+  document.getElementById('sync-status').title = '已連線';
+}, err => {
+  console.error(err);
+  document.getElementById('sync-status').style.color = '#f87171';
+  document.getElementById('sync-status').title = '連線失敗';
+});
+
+// ── Render ─────────────────────────────────────────────────────
+function render() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const grid = document.getElementById('grid');
+  const countBar = document.getElementById('count-bar');
+
+  let list = Object.entries(contacts).map(([id, d]) => ({ id, ...d }));
+
+  // filter
+  if (activeFilter !== '全部') {
+    list = list.filter(c => c.industry === activeFilter);
+  }
+
+  // search
+  if (q) {
+    list = list.filter(c =>
+      [c.company, c.name, c.dept, c.title, c.phone, c.email, c.address, c.note]
+        .some(v => v && v.toLowerCase().includes(q))
+    );
+  }
+
+  // sort: company then name
+  list.sort((a, b) => (a.company || '').localeCompare(b.company || '', 'zh-TW'));
+
+  countBar.textContent = `共 ${list.length} 筆${activeFilter !== '全部' ? `（${activeFilter}）` : ''}`;
+
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty">
+      <div class="empty-icon">📭</div>
+      <p>${Object.keys(contacts).length === 0 ? '還沒有任何聯絡人' : '找不到符合條件的聯絡人'}</p>
+      <small>${Object.keys(contacts).length === 0 ? '點右上角「＋ 新增聯絡人」開始建立' : '試試不同關鍵字或篩選條件'}</small>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(c => cardHTML(c)).join('');
+}
+
+function cardHTML(c) {
+  const ind = c.industry || '其他';
+  return `
+  <div class="card">
+    <span class="card-industry ind-${ind}">${ind}</span>
+    <div class="card-name">${esc(c.name || '—')}</div>
+    <div class="card-company">${esc(c.company || '')}</div>
+    <div class="card-title">${[c.dept, c.title].filter(Boolean).map(esc).join(' · ') || ''}</div>
+    <div class="card-divider"></div>
+    <div class="card-info">
+      ${c.phone ? `<div class="card-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.93 5.93l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>
+      </div>` : ''}
+      ${c.email ? `<div class="card-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <a href="mailto:${esc(c.email)}">${esc(c.email)}</a>
+      </div>` : ''}
+      ${c.address ? `<div class="card-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span>${esc(c.address)}</span>
+      </div>` : ''}
+    </div>
+    ${c.note ? `<div class="card-note">💬 ${esc(c.note)}</div>` : ''}
+    <div class="card-actions">
+      <button class="btn btn-outline btn-sm" onclick="openDrawer('${c.id}')">編輯</button>
+      <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteContact('${c.id}','${esc(c.name)}')">刪除</button>
+    </div>
+  </div>`;
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── Filter ─────────────────────────────────────────────────────
+function setFilter(el) {
+  activeFilter = el.dataset.ind;
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+// ── Drawer ─────────────────────────────────────────────────────
+function openDrawer(id) {
+  const overlay = document.getElementById('drawer-overlay');
+  const title = document.getElementById('drawer-title');
+  ['f-id','f-company','f-industry','f-name','f-dept','f-title','f-phone','f-email','f-address','f-note'].forEach(fid => {
+    const el = document.getElementById(fid);
+    el.value = '';
+  });
+  if (id && contacts[id]) {
+    const c = contacts[id];
+    title.textContent = '編輯聯絡人';
+    document.getElementById('f-id').value = id;
+    document.getElementById('f-company').value = c.company || '';
+    document.getElementById('f-industry').value = c.industry || '';
+    document.getElementById('f-name').value = c.name || '';
+    document.getElementById('f-dept').value = c.dept || '';
+    document.getElementById('f-title').value = c.title || '';
+    document.getElementById('f-phone').value = c.phone || '';
+    document.getElementById('f-email').value = c.email || '';
+    document.getElementById('f-address').value = c.address || '';
+    document.getElementById('f-note').value = c.note || '';
+  } else {
+    title.textContent = '新增聯絡人';
+  }
+  overlay.classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('drawer-overlay')) closeDrawer();
+}
+
+function saveContact() {
+  const id = document.getElementById('f-id').value;
+  const company = document.getElementById('f-company').value.trim();
+  const name = document.getElementById('f-name').value.trim();
+  const industry = document.getElementById('f-industry').value;
+
+  if (!company || !name || !industry) {
+    toast('請填寫公司、姓名、產業');
+    return;
+  }
+
+  const data = {
+    company,
+    industry,
+    name,
+    dept:    document.getElementById('f-dept').value.trim(),
+    title:   document.getElementById('f-title').value.trim(),
+    phone:   document.getElementById('f-phone').value.trim(),
+    email:   document.getElementById('f-email').value.trim(),
+    address: document.getElementById('f-address').value.trim(),
+    note:    document.getElementById('f-note').value.trim(),
+    updatedAt: Date.now()
+  };
+
+  if (id) {
+    ref.child(id).update(data).then(() => { toast('已更新'); closeDrawer(); });
+  } else {
+    data.createdAt = Date.now();
+    ref.push(data).then(() => { toast('已新增'); closeDrawer(); });
+  }
+}
+
+// ── Delete ─────────────────────────────────────────────────────
+let pendingDeleteId = null;
+
+function deleteContact(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('confirm-msg').textContent = `確定要刪除「${name}」的聯絡資訊嗎？`;
+  document.getElementById('confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick = () => {
+    ref.child(pendingDeleteId).remove().then(() => { toast('已刪除'); closeConfirm(); });
+  };
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  pendingDeleteId = null;
+}
+
+// ── Export CSV ─────────────────────────────────────────────────
+function exportCSV() {
+  const list = Object.values(contacts);
+  if (list.length === 0) { toast('沒有資料可匯出'); return; }
+  const headers = ['公司','產業','姓名','部門','職位','電話','Email','地址','備註'];
+  const rows = list.map(c => [
+    c.company, c.industry, c.name, c.dept, c.title, c.phone, c.email, c.address, c.note
+  ].map(v => `"${(v||'').replace(/"/g,'""')}"`));
+  const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `客戶聯絡資訊_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast('已匯出 CSV');
+}
+
+// ── Import CSV ─────────────────────────────────────────────────
+function openImport() {
+  document.getElementById('import-overlay').classList.add('open');
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-confirm-btn').style.display = 'none';
+  document.getElementById('csv-input').value = '';
+  importData = [];
+}
+
+function closeImport() {
+  document.getElementById('import-overlay').classList.remove('open');
+}
+
+function handleImportOverlay(e) {
+  if (e.target === document.getElementById('import-overlay')) closeImport();
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('file-drop').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+
+function handleFile(file) {
+  if (!file || !file.name.endsWith('.csv')) { toast('請選擇 .csv 檔案'); return; }
+  const reader = new FileReader();
+  reader.onload = e => parseCSV(e.target.result);
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) { toast('CSV 內容太少'); return; }
+  const rows = lines.slice(1); // skip header
+  importData = rows.map(line => {
+    const cols = line.split(',').map(v => v.trim().replace(/^"|"$/g,'').replace(/""/g,'"'));
+    return {
+      company:  cols[0] || '',
+      industry: cols[1] || '其他',
+      name:     cols[2] || '',
+      dept:     cols[3] || '',
+      title:    cols[4] || '',
+      phone:    cols[5] || '',
+      email:    cols[6] || '',
+      address:  cols[7] || '',
+      note:     cols[8] || '',
+      createdAt: Date.now()
+    };
+  }).filter(r => r.company && r.name);
+
+  const preview = document.getElementById('import-preview');
+  preview.style.display = 'block';
+  preview.innerHTML = `✅ 解析完成，共 <strong>${importData.length}</strong> 筆有效資料<br>
+    ${importData.slice(0,3).map(r => `${r.company} · ${r.name}`).join('<br>')}
+    ${importData.length > 3 ? `<br>…等 ${importData.length} 筆` : ''}`;
+
+  document.getElementById('import-confirm-btn').style.display = 'inline-flex';
+}
+
+function confirmImport() {
+  if (importData.length === 0) return;
+  const updates = {};
+  importData.forEach(d => { updates[ref.push().key] = d; });
+  ref.update(updates).then(() => {
+    toast(`已匯入 ${importData.length} 筆`);
+    closeImport();
+  });
+}
+
+function downloadTemplate() {
+  const csv = '\uFEFF公司,產業,姓名,部門,職位,電話,Email,地址,備註\r\n範例公司,金融,王小明,行銷部,業務總監,0912345678,name@example.com,台北市中山區,重要客戶\r\n';
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '聯絡人匯入範本.csv';
+  a.click();
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
