@@ -6,6 +6,56 @@
 <title>客戶聯絡資訊</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
+/* ── PIN LOCK ── */
+#pin-screen {
+  position: fixed;
+  inset: 0;
+  background: #1A1A1A;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+#pin-screen h2 {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+#pin-input {
+  width: 160px;
+  text-align: center;
+  padding: 12px;
+  font-size: 22px;
+  letter-spacing: 0.3em;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: #2a2a2a;
+  color: #fff;
+  outline: none;
+  font-family: inherit;
+}
+#pin-input:focus { border-color: #888; }
+#pin-error {
+  color: #f87171;
+  font-size: 13px;
+  min-height: 18px;
+}
+#pin-btn {
+  padding: 10px 28px;
+  background: #fff;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+#pin-btn:hover { background: #ddd; }
+
 :root {
   --bg:       #F7F7F5;
   --surface:  #FFFFFF;
@@ -513,6 +563,14 @@ header {
 </head>
 <body>
 
+<!-- PIN SCREEN -->
+<div id="pin-screen">
+  <h2>🔒 客戶聯絡資訊</h2>
+  <input id="pin-input" type="password" inputmode="numeric" maxlength="10" placeholder="••••" onkeydown="if(event.key==='Enter')checkPin()">
+  <div id="pin-error"></div>
+  <button id="pin-btn" onclick="checkPin()">確認</button>
+</div>
+
 <!-- HEADER -->
 <header>
   <div class="header-left">
@@ -666,6 +724,29 @@ header {
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
+// ── PIN 保護 ───────────────────────────────────────────────────
+(function() {
+  if (sessionStorage.getItem('cc_unlocked') === '1') {
+    document.getElementById('pin-screen').style.display = 'none';
+  } else {
+    document.body.style.overflow = 'hidden';
+  }
+  setTimeout(() => document.getElementById('pin-input').focus(), 100);
+})();
+
+function checkPin() {
+  const val = document.getElementById('pin-input').value;
+  if (val === '3035') {
+    sessionStorage.setItem('cc_unlocked', '1');
+    document.getElementById('pin-screen').style.display = 'none';
+    document.body.style.overflow = '';
+  } else {
+    document.getElementById('pin-error').textContent = '密碼錯誤，請再試一次';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+  }
+}
+
 // ── Firebase 設定 ─────────────────────────────────────────────
 const firebaseConfig = {
   apiKey:            "AIzaSyB0nqFFS6-MIuWAM0XDnURRnxg57JZF5Sc",
