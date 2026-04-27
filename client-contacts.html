@@ -229,114 +229,152 @@ header {
   color: var(--muted);
 }
 
-/* ── GRID ── */
-.grid {
-  padding: 4px 28px 40px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 14px;
+/* ── LIST ── */
+.list {
+  padding: 8px 28px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 900px;
 }
 
-/* ── CARD ── */
-.card {
+/* ── COMPANY CARD ── */
+.company-card {
   background: var(--surface);
   border-radius: 10px;
-  padding: 18px 20px 16px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+  overflow: hidden;
   transition: box-shadow 0.15s;
-  position: relative;
 }
-.card:hover { box-shadow: var(--shadow-lg); }
+.company-card:hover { box-shadow: var(--shadow-lg); }
 
-.card-industry {
+.company-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+}
+.company-header:hover { background: var(--hover); }
+
+.company-industry {
   display: inline-block;
   font-size: 11px;
   font-weight: 500;
   padding: 2px 8px;
   border-radius: 4px;
-  margin-bottom: 10px;
   letter-spacing: 0.03em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.card-name {
-  font-size: 16px;
+.company-name {
+  font-size: 15px;
   font-weight: 600;
-  margin-bottom: 2px;
-  line-height: 1.3;
+  flex: 1;
 }
 
-.card-company {
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: 3px;
-}
-
-.card-title {
+.company-count {
   font-size: 12px;
   color: var(--muted);
-  margin-bottom: 14px;
+  background: var(--tag-bg);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
 }
 
-.card-divider {
-  height: 1px;
-  background: var(--border);
-  margin-bottom: 12px;
-}
-
-.card-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.card-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.card-row svg {
-  flex-shrink: 0;
+.company-chevron {
   color: var(--muted);
-  margin-top: 1px;
+  font-size: 12px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.company-card.open .company-chevron { transform: rotate(90deg); }
+
+/* ── CONTACTS LIST ── */
+.contacts-list {
+  display: none;
+  border-top: 1px solid var(--border);
+}
+.company-card.open .contacts-list { display: block; }
+
+.contact-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.contact-item:last-child { border-bottom: none; }
+.contact-item:hover { background: var(--hover); }
+
+.contact-main { min-width: 0; }
+
+.contact-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 2px;
 }
 
-.card-row a {
+.contact-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.contact-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.contact-info-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.contact-info-item svg { color: var(--muted); flex-shrink: 0; }
+
+.contact-info-item a {
   color: var(--text);
   text-decoration: none;
 }
-.card-row a:hover { text-decoration: underline; }
+.contact-info-item a:hover { text-decoration: underline; }
 
-.card-note {
+.contact-note {
+  margin-top: 6px;
   font-size: 12px;
   color: var(--muted);
   background: var(--bg);
-  border-radius: 5px;
-  padding: 7px 10px;
-  margin-bottom: 14px;
-  line-height: 1.5;
+  border-radius: 4px;
+  padding: 5px 8px;
 }
 
-.card-actions {
+.contact-actions {
   display: flex;
   gap: 6px;
-  justify-content: flex-end;
+  flex-shrink: 0;
+  padding-top: 2px;
 }
 
 /* ── INDUSTRY COLORS ── */
 .ind-金融      { background: #EEF2FF; color: #3730A3; }
 .ind-精品鐘錶  { background: #FDF4E7; color: #92400E; }
 .ind-零售百貨  { background: #FFF0F0; color: #9B1C1C; }
-.ind-能源      { background: #ECFDF5; color: #065F46; }
-.ind-半導體    { background: #F0F9FF; color: #075985; }
+.ind-科技      { background: #F0FDF4; color: #166534; }
+.ind-傳產      { background: #FFF7ED; color: #9A3412; }
+.ind-保養生技  { background: #FDF4FF; color: #7E22CE; }
+.ind-大學EMBA  { background: #F0F9FF; color: #075985; }
 .ind-其他      { background: #F3F4F6; color: #374151; }
 
 /* ── EMPTY STATE ── */
 .empty {
-  grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
   color: var(--muted);
@@ -606,7 +644,7 @@ header {
 <div class="count-bar" id="count-bar">載入中…</div>
 
 <!-- GRID -->
-<div class="grid" id="grid"></div>
+<div class="list" id="list"></div>
 
 <!-- DRAWER: 新增 / 編輯 -->
 <div class="overlay" id="drawer-overlay" onclick="handleOverlayClick(event)">
@@ -787,31 +825,31 @@ ref.on('value', snap => {
 // ── Render ─────────────────────────────────────────────────────
 function render() {
   const q = document.getElementById('search').value.trim().toLowerCase();
-  const grid = document.getElementById('grid');
+  const listEl = document.getElementById('list');
   const countBar = document.getElementById('count-bar');
 
-  let list = Object.entries(contacts).map(([id, d]) => ({ id, ...d }));
+  let all = Object.entries(contacts).map(([id, d]) => ({ id, ...d }));
 
-  // filter
-  if (activeFilter !== '全部') {
-    list = list.filter(c => c.industry === activeFilter);
-  }
+  if (activeFilter !== '全部') all = all.filter(c => c.industry === activeFilter);
+  if (q) all = all.filter(c =>
+    [c.company, c.name, c.dept, c.title, c.phone, c.email, c.address, c.note]
+      .some(v => v && v.toLowerCase().includes(q))
+  );
 
-  // search
-  if (q) {
-    list = list.filter(c =>
-      [c.company, c.name, c.dept, c.title, c.phone, c.email, c.address, c.note]
-        .some(v => v && v.toLowerCase().includes(q))
-    );
-  }
+  // 按公司分組
+  const groups = {};
+  all.forEach(c => {
+    const key = c.company || '（未填公司）';
+    if (!groups[key]) groups[key] = { industry: c.industry, contacts: [] };
+    groups[key].contacts.push(c);
+  });
 
-  // sort: company then name
-  list.sort((a, b) => (a.company || '').localeCompare(b.company || '', 'zh-TW'));
+  const sortedCompanies = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'zh-TW'));
 
-  countBar.textContent = `共 ${list.length} 筆${activeFilter !== '全部' ? `（${activeFilter}）` : ''}`;
+  countBar.textContent = `共 ${sortedCompanies.length} 家公司、${all.length} 位聯絡人${activeFilter !== '全部' ? `（${activeFilter}）` : ''}`;
 
-  if (list.length === 0) {
-    grid.innerHTML = `<div class="empty">
+  if (all.length === 0) {
+    listEl.innerHTML = `<div class="empty">
       <div class="empty-icon">📭</div>
       <p>${Object.keys(contacts).length === 0 ? '還沒有任何聯絡人' : '找不到符合條件的聯絡人'}</p>
       <small>${Object.keys(contacts).length === 0 ? '點右上角「＋ 新增聯絡人」開始建立' : '試試不同關鍵字或篩選條件'}</small>
@@ -819,34 +857,56 @@ function render() {
     return;
   }
 
-  grid.innerHTML = list.map(c => cardHTML(c)).join('');
+  // 搜尋時自動展開；無搜尋時預設收合
+  const autoOpen = !!q;
+
+  listEl.innerHTML = sortedCompanies.map(company => {
+    const g = groups[company];
+    const ind = g.industry || '其他';
+    const isOpen = autoOpen;
+    return `
+    <div class="company-card ${isOpen ? 'open' : ''}" onclick="toggleCompany(this)">
+      <div class="company-header">
+        <span class="company-industry ind-${esc(ind)}">${esc(ind)}</span>
+        <span class="company-name">${esc(company)}</span>
+        <span class="company-count">${g.contacts.length} 人</span>
+        <span class="company-chevron">▶</span>
+      </div>
+      <div class="contacts-list" onclick="event.stopPropagation()">
+        ${g.contacts.sort((a,b)=>(a.name||'').localeCompare(b.name||'','zh-TW')).map(c => contactRowHTML(c)).join('')}
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function cardHTML(c) {
-  const ind = c.industry || '其他';
+function toggleCompany(card) {
+  card.classList.toggle('open');
+}
+
+function contactRowHTML(c) {
+  const meta = [c.dept, c.title].filter(Boolean).join(' · ');
   return `
-  <div class="card">
-    <span class="card-industry ind-${ind}">${ind}</span>
-    <div class="card-name">${esc(c.name || '—')}</div>
-    <div class="card-company">${esc(c.company || '')}</div>
-    <div class="card-title">${[c.dept, c.title].filter(Boolean).map(esc).join(' · ') || ''}</div>
-    <div class="card-divider"></div>
-    <div class="card-info">
-      ${c.phone ? `<div class="card-row">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.93 5.93l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>
-      </div>` : ''}
-      ${c.email ? `<div class="card-row">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        <a href="mailto:${esc(c.email)}">${esc(c.email)}</a>
-      </div>` : ''}
-      ${c.address ? `<div class="card-row">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span>${esc(c.address)}</span>
-      </div>` : ''}
+  <div class="contact-item">
+    <div class="contact-main">
+      <div class="contact-name">${esc(c.name || '—')}</div>
+      ${meta ? `<div class="contact-meta">${esc(meta)}</div>` : ''}
+      <div class="contact-info">
+        ${c.phone ? `<span class="contact-info-item">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.93 5.93l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>
+        </span>` : ''}
+        ${c.email ? `<span class="contact-info-item">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <a href="mailto:${esc(c.email)}">${esc(c.email)}</a>
+        </span>` : ''}
+        ${c.address ? `<span class="contact-info-item">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>${esc(c.address)}</span>
+        </span>` : ''}
+      </div>
+      ${c.note ? `<div class="contact-note">💬 ${esc(c.note)}</div>` : ''}
     </div>
-    ${c.note ? `<div class="card-note">💬 ${esc(c.note)}</div>` : ''}
-    <div class="card-actions">
+    <div class="contact-actions">
       <button class="btn btn-outline btn-sm" onclick="openDrawer('${c.id}')">編輯</button>
       <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteContact('${c.id}','${esc(c.name)}')">刪除</button>
     </div>
