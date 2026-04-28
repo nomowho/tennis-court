@@ -685,14 +685,14 @@ header {
 <!-- HEADER -->
 <header>
   <div class="header-left">
-    <h1>客戶聯絡資訊 <span id="sync-status">●</span></h1>
+    <h1>Client <span id="sync-status">●</span></h1>
   </div>
   <div class="header-actions">
-    <button class="btn btn-ghost btn-sm" onclick="openOCR()">📷 拍名片</button>
-    <button class="btn btn-ghost btn-sm" onclick="openImport()">📥 匯入 CSV</button>
-    <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📤 匯出</button>
+    <button class="btn btn-ghost btn-sm" onclick="openOCR()" title="拍名片辨識">📷</button>
+    <button class="btn btn-ghost btn-sm" onclick="openImport()" title="匯入 CSV">📥</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()" title="匯出">📤</button>
     <button class="btn btn-ghost btn-sm" onclick="openApiSettings()" title="API Key 設定">⚙️</button>
-    <button class="btn btn-primary" onclick="openDrawer()">＋ 新增聯絡人</button>
+    <button class="btn btn-primary" onclick="openDrawer()">＋ 新增</button>
   </div>
 </header>
 
@@ -769,13 +769,17 @@ header {
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">電話</label>
+          <label class="form-label">電話 1</label>
           <input class="form-input" id="f-phone" type="tel" placeholder="0912-345-678">
         </div>
         <div class="form-group">
-          <label class="form-label">Email</label>
-          <input class="form-input" id="f-email" type="email" placeholder="name@example.com">
+          <label class="form-label">電話 2</label>
+          <input class="form-input" id="f-phone2" type="tel" placeholder="02-1234-5678">
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="f-email" type="email" placeholder="name@example.com">
       </div>
       <div class="form-group">
         <label class="form-label">地址</label>
@@ -945,6 +949,51 @@ ref.on('value', snap => {
   document.getElementById('sync-status').style.color = '#f87171';
   document.getElementById('sync-status').title = '連線失敗';
 });
+initDragSort();
+
+// ── Company order (drag-to-reorder) ────────────────────────────
+let companyOrder = JSON.parse(localStorage.getItem('companyOrder') || '[]');
+
+function saveCompanyOrder() {
+  localStorage.setItem('companyOrder', JSON.stringify(companyOrder));
+}
+
+function initDragSort() {
+  const listEl = document.getElementById('list');
+  let dragSrc = null;
+
+  listEl.addEventListener('dragstart', e => {
+    dragSrc = e.target.closest('.company-card');
+    if (!dragSrc) return;
+    e.dataTransfer.effectAllowed = 'move';
+    dragSrc.style.opacity = '0.4';
+  });
+
+  listEl.addEventListener('dragend', e => {
+    const card = e.target.closest('.company-card');
+    if (card) card.style.opacity = '';
+  });
+
+  listEl.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.target.closest('.company-card');
+    if (target && target !== dragSrc) {
+      const cards = [...listEl.querySelectorAll('.company-card')];
+      const srcIdx = cards.indexOf(dragSrc);
+      const tgtIdx = cards.indexOf(target);
+      if (srcIdx < tgtIdx) listEl.insertBefore(dragSrc, target.nextSibling);
+      else listEl.insertBefore(dragSrc, target);
+    }
+  });
+
+  listEl.addEventListener('drop', e => {
+    e.preventDefault();
+    const cards = [...listEl.querySelectorAll('.company-card')];
+    companyOrder = cards.map(c => c.dataset.company);
+    saveCompanyOrder();
+  });
+}
 
 // ── Render ─────────────────────────────────────────────────────
 function render() {
@@ -956,7 +1005,7 @@ function render() {
 
   if (activeFilter !== '全部') all = all.filter(c => c.industry === activeFilter);
   if (q) all = all.filter(c =>
-    [c.company, c.name, c.dept, c.title, c.phone, c.email, c.address, c.note]
+    [c.company, c.name, c.dept, c.title, c.phone, c.phone2, c.email, c.address, c.note]
       .some(v => v && v.toLowerCase().includes(q))
   );
 
@@ -968,7 +1017,11 @@ function render() {
     groups[key].contacts.push(c);
   });
 
-  const sortedCompanies = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'zh-TW'));
+  // 用自訂順序排列，新公司補在最後
+  const allCompanies = Object.keys(groups);
+  const ordered = companyOrder.filter(c => allCompanies.includes(c));
+  const newOnes = allCompanies.filter(c => !ordered.includes(c)).sort((a, b) => a.localeCompare(b, 'zh-TW'));
+  const sortedCompanies = [...ordered, ...newOnes];
 
   countBar.textContent = `共 ${sortedCompanies.length} 家公司、${all.length} 位聯絡人${activeFilter !== '全部' ? `（${activeFilter}）` : ''}`;
 
@@ -989,7 +1042,7 @@ function render() {
     const ind = g.industry || '其他';
     const isOpen = autoOpen;
     return `
-    <div class="company-card ${isOpen ? 'open' : ''}" onclick="toggleCompany(this)">
+    <div class="company-card ${isOpen ? 'open' : ''}" draggable="true" data-company="${esc(company)}" onclick="toggleCompany(this)">
       <div class="company-header">
         <span class="company-industry ind-${esc(ind)}">${esc(ind)}</span>
         <span class="company-name">${esc(company)}</span>
@@ -1003,7 +1056,12 @@ function render() {
   }).join('');
 }
 
+let wasDragging = false;
+document.getElementById('list').addEventListener('dragstart', () => { wasDragging = true; });
+document.getElementById('list').addEventListener('dragend', () => { setTimeout(() => { wasDragging = false; }, 100); });
+
 function toggleCompany(card) {
+  if (wasDragging) return;
   card.classList.toggle('open');
 }
 
@@ -1018,6 +1076,10 @@ function contactRowHTML(c) {
         ${c.phone ? `<span class="contact-info-item">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.93 5.93l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
           <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>
+        </span>` : ''}
+        ${c.phone2 ? `<span class="contact-info-item">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.93 5.93l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <a href="tel:${esc(c.phone2)}">${esc(c.phone2)}</a>
         </span>` : ''}
         ${c.email ? `<span class="contact-info-item">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -1053,7 +1115,7 @@ function setFilter(el) {
 function openDrawer(id) {
   const overlay = document.getElementById('drawer-overlay');
   const title = document.getElementById('drawer-title');
-  ['f-id','f-company','f-industry','f-name','f-dept','f-title','f-phone','f-email','f-address','f-note'].forEach(fid => {
+  ['f-id','f-company','f-industry','f-name','f-dept','f-title','f-phone','f-phone2','f-email','f-address','f-note'].forEach(fid => {
     const el = document.getElementById(fid);
     el.value = '';
   });
@@ -1067,6 +1129,7 @@ function openDrawer(id) {
     document.getElementById('f-dept').value = c.dept || '';
     document.getElementById('f-title').value = c.title || '';
     document.getElementById('f-phone').value = c.phone || '';
+    document.getElementById('f-phone2').value = c.phone2 || '';
     document.getElementById('f-email').value = c.email || '';
     document.getElementById('f-address').value = c.address || '';
     document.getElementById('f-note').value = c.note || '';
@@ -1102,6 +1165,7 @@ function saveContact() {
     dept:    document.getElementById('f-dept').value.trim(),
     title:   document.getElementById('f-title').value.trim(),
     phone:   document.getElementById('f-phone').value.trim(),
+    phone2:  document.getElementById('f-phone2').value.trim(),
     email:   document.getElementById('f-email').value.trim(),
     address: document.getElementById('f-address').value.trim(),
     note:    document.getElementById('f-note').value.trim(),
@@ -1389,7 +1453,11 @@ async function analyzeCard() {
     if (info.name)     document.getElementById('f-name').value     = info.name;
     if (info.dept)     document.getElementById('f-dept').value     = info.dept;
     if (info.title)    document.getElementById('f-title').value    = info.title;
-    if (info.phone)    document.getElementById('f-phone').value    = info.phone;
+    if (info.phone) {
+      const phones = info.phone.split(/[\n,；;]+/).map(p => p.trim()).filter(Boolean);
+      document.getElementById('f-phone').value  = phones[0] || '';
+      document.getElementById('f-phone2').value = phones[1] || '';
+    }
     if (info.email)    document.getElementById('f-email').value    = info.email;
     if (info.address)  document.getElementById('f-address').value  = info.address;
     if (info.note)     document.getElementById('f-note').value     = info.note;
