@@ -691,6 +691,7 @@ header {
     <button class="btn btn-ghost btn-sm" onclick="openOCR()">📷 拍名片</button>
     <button class="btn btn-ghost btn-sm" onclick="openImport()">📥 匯入 CSV</button>
     <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📤 匯出</button>
+    <button class="btn btn-ghost btn-sm" onclick="openApiSettings()" title="API Key 設定">⚙️</button>
     <button class="btn btn-primary" onclick="openDrawer()">＋ 新增聯絡人</button>
   </div>
 </header>
@@ -821,6 +822,26 @@ header {
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeImport()">取消</button>
       <button class="btn btn-primary" id="import-confirm-btn" onclick="confirmImport()" style="display:none">匯入</button>
+    </div>
+  </div>
+</div>
+
+<!-- API KEY 設定 MODAL -->
+<div class="modal-overlay" id="api-settings-overlay" onclick="handleApiSettingsOverlay(event)">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>⚙️ Anthropic API Key 設定</h3>
+      <button class="btn btn-outline btn-sm" onclick="closeApiSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Key 只存在本機瀏覽器，不會上傳。用於名片辨識功能。</p>
+      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:6px">API Key</label>
+      <input id="api-key-input" type="password" placeholder="sk-ant-api03-..." style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;outline:none">
+      <p id="api-key-status" style="font-size:12px;color:var(--muted);margin-top:8px"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeApiSettings()">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="saveApiKey()">儲存</button>
     </div>
   </div>
 </div>
@@ -1208,6 +1229,28 @@ function downloadTemplate() {
   a.click();
 }
 
+// ── API Key 設定 ───────────────────────────────────────────────
+function openApiSettings() {
+  const existing = localStorage.getItem('anthropic_api_key') || '';
+  const input = document.getElementById('api-key-input');
+  input.value = existing;
+  document.getElementById('api-key-status').textContent = existing ? '✅ 已設定' : '尚未設定';
+  document.getElementById('api-settings-overlay').classList.add('open');
+}
+function closeApiSettings() {
+  document.getElementById('api-settings-overlay').classList.remove('open');
+}
+function handleApiSettingsOverlay(e) {
+  if (e.target === document.getElementById('api-settings-overlay')) closeApiSettings();
+}
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val) { toast('請輸入 API Key'); return; }
+  localStorage.setItem('anthropic_api_key', val);
+  toast('API Key 已儲存');
+  closeApiSettings();
+}
+
 // ── OCR 名片辨識 ───────────────────────────────────────────────
 function getAnthropicKey() {
   let key = localStorage.getItem('anthropic_api_key');
@@ -1249,18 +1292,31 @@ function handleOcrDrop(e) {
 function handleOcrFile(file) {
   if (!file) return;
   if (!file.type.startsWith('image/')) { toast('請選擇圖片檔案'); return; }
-  ocrImageType = file.type || 'image/jpeg';
+  ocrImageType = 'image/jpeg';
   const reader = new FileReader();
   reader.onload = e => {
-    const dataUrl = e.target.result;
-    // strip "data:image/...;base64," prefix
-    ocrImageBase64 = dataUrl.split(',')[1];
-    const img = document.getElementById('ocr-preview-img');
-    img.src = dataUrl;
-    img.style.display = 'block';
-    document.getElementById('ocr-drop').style.display = 'none';
-    document.getElementById('ocr-status').textContent = '';
-    document.getElementById('ocr-analyze-btn').style.display = 'inline-flex';
+    const original = new Image();
+    original.onload = () => {
+      // 壓縮到最長邊 1600px，檔案大小控制在 ~1MB 以內
+      const MAX = 1600;
+      let w = original.width, h = original.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(original, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      ocrImageBase64 = dataUrl.split(',')[1];
+      const img = document.getElementById('ocr-preview-img');
+      img.src = dataUrl;
+      img.style.display = 'block';
+      document.getElementById('ocr-drop').style.display = 'none';
+      document.getElementById('ocr-status').textContent = '';
+      document.getElementById('ocr-analyze-btn').style.display = 'inline-flex';
+    };
+    original.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
