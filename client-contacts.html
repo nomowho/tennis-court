@@ -567,6 +567,77 @@ header {
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ── OCR MODAL ── */
+#ocr-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 350;
+  align-items: center;
+  justify-content: center;
+}
+#ocr-overlay.open { display: flex; }
+
+.ocr-box {
+  background: var(--surface);
+  border-radius: 12px;
+  width: 420px;
+  max-width: 95vw;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.ocr-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ocr-header h3 { font-size: 15px; font-weight: 600; }
+
+.ocr-body { padding: 18px 20px; }
+
+.ocr-drop {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.15s;
+  margin-bottom: 14px;
+}
+.ocr-drop:hover, .ocr-drop.drag { border-color: #999; background: var(--hover); }
+.ocr-drop-icon { font-size: 32px; margin-bottom: 8px; }
+.ocr-drop p { font-size: 13px; margin-bottom: 4px; }
+.ocr-drop small { font-size: 12px; }
+
+#ocr-preview-img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  display: none;
+}
+
+.ocr-status {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  padding: 8px 0;
+}
+
+.ocr-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 /* ── CONFIRM DIALOG ── */
 #confirm-overlay {
   display: none;
@@ -617,6 +688,7 @@ header {
     <h1>客戶聯絡資訊 <span id="sync-status">●</span></h1>
   </div>
   <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openOCR()">📷 拍名片</button>
     <button class="btn btn-ghost btn-sm" onclick="openImport()">📥 匯入 CSV</button>
     <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📤 匯出</button>
     <button class="btn btn-primary" onclick="openDrawer()">＋ 新增聯絡人</button>
@@ -749,6 +821,33 @@ header {
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeImport()">取消</button>
       <button class="btn btn-primary" id="import-confirm-btn" onclick="confirmImport()" style="display:none">匯入</button>
+    </div>
+  </div>
+</div>
+
+<!-- OCR 名片 MODAL -->
+<div id="ocr-overlay" onclick="handleOcrOverlay(event)">
+  <div class="ocr-box">
+    <div class="ocr-header">
+      <h3>📷 名片辨識</h3>
+      <button class="drawer-close" onclick="closeOCR()">✕</button>
+    </div>
+    <div class="ocr-body">
+      <img id="ocr-preview-img" src="" alt="">
+      <div class="ocr-drop" id="ocr-drop" onclick="document.getElementById('ocr-input').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleOcrDrop(event)">
+        <div class="ocr-drop-icon">📷</div>
+        <p>點擊拍照或選擇名片照片</p>
+        <small>支援 JPG、PNG</small>
+      </div>
+      <input type="file" id="ocr-input" accept="image/*" capture="environment" style="display:none" onchange="handleOcrFile(this.files[0])">
+      <div class="ocr-status" id="ocr-status"></div>
+    </div>
+    <div class="ocr-footer">
+      <button class="btn btn-outline" onclick="closeOCR()">取消</button>
+      <button class="btn btn-primary" id="ocr-analyze-btn" onclick="analyzeCard()" style="display:none">✨ 辨識名片</button>
     </div>
   </div>
 </div>
@@ -1107,6 +1206,144 @@ function downloadTemplate() {
   a.href = URL.createObjectURL(blob);
   a.download = '聯絡人匯入範本.csv';
   a.click();
+}
+
+// ── OCR 名片辨識 ───────────────────────────────────────────────
+function getAnthropicKey() {
+  let key = localStorage.getItem('anthropic_api_key');
+  if (!key) {
+    key = prompt('請輸入 Anthropic API Key（僅存在本機，不會上傳）：');
+    if (key) localStorage.setItem('anthropic_api_key', key.trim());
+  }
+  return key ? key.trim() : null;
+}
+let ocrImageBase64 = null;
+let ocrImageType = 'image/jpeg';
+
+function openOCR() {
+  ocrImageBase64 = null;
+  document.getElementById('ocr-overlay').classList.add('open');
+  document.getElementById('ocr-preview-img').style.display = 'none';
+  document.getElementById('ocr-preview-img').src = '';
+  document.getElementById('ocr-drop').style.display = 'flex';
+  document.getElementById('ocr-status').textContent = '';
+  document.getElementById('ocr-analyze-btn').style.display = 'none';
+  document.getElementById('ocr-input').value = '';
+}
+
+function closeOCR() {
+  document.getElementById('ocr-overlay').classList.remove('open');
+}
+
+function handleOcrOverlay(e) {
+  if (e.target === document.getElementById('ocr-overlay')) closeOCR();
+}
+
+function handleOcrDrop(e) {
+  e.preventDefault();
+  document.getElementById('ocr-drop').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) handleOcrFile(file);
+}
+
+function handleOcrFile(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { toast('請選擇圖片檔案'); return; }
+  ocrImageType = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    // strip "data:image/...;base64," prefix
+    ocrImageBase64 = dataUrl.split(',')[1];
+    const img = document.getElementById('ocr-preview-img');
+    img.src = dataUrl;
+    img.style.display = 'block';
+    document.getElementById('ocr-drop').style.display = 'none';
+    document.getElementById('ocr-status').textContent = '';
+    document.getElementById('ocr-analyze-btn').style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzeCard() {
+  if (!ocrImageBase64) return;
+  const ANTHROPIC_API_KEY = getAnthropicKey();
+  if (!ANTHROPIC_API_KEY) { toast('需要 API Key 才能辨識'); return; }
+  const statusEl = document.getElementById('ocr-status');
+  const btn = document.getElementById('ocr-analyze-btn');
+  btn.disabled = true;
+  btn.textContent = '辨識中…';
+  statusEl.textContent = '正在分析名片，請稍候…';
+
+  const mediaType = ocrImageType === 'image/png' ? 'image/png' : 'image/jpeg';
+
+  const prompt = `請從這張名片圖片中提取聯絡資訊，以JSON格式回傳，欄位如下：
+{
+  "company": "公司名稱",
+  "industry": "產業（從以下選一個：金融、精品鐘錶、零售百貨、能源、科技、傳產、保養生技、大學EMBA、其他）",
+  "name": "姓名",
+  "dept": "部門",
+  "title": "職稱",
+  "phone": "電話（若有多個用換行分隔）",
+  "email": "Email",
+  "address": "地址",
+  "note": ""
+}
+只回傳JSON，不要其他說明文字。若某欄位無法判斷請留空字串。`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: ocrImageBase64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.error?.message || `API 回傳 ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('無法解析回傳內容');
+
+    const info = JSON.parse(jsonMatch[0]);
+
+    // 關閉 OCR，開啟 Drawer 並填入
+    closeOCR();
+    openDrawer();
+    if (info.company)  document.getElementById('f-company').value  = info.company;
+    if (info.industry) document.getElementById('f-industry').value = info.industry;
+    if (info.name)     document.getElementById('f-name').value     = info.name;
+    if (info.dept)     document.getElementById('f-dept').value     = info.dept;
+    if (info.title)    document.getElementById('f-title').value    = info.title;
+    if (info.phone)    document.getElementById('f-phone').value    = info.phone;
+    if (info.email)    document.getElementById('f-email').value    = info.email;
+    if (info.address)  document.getElementById('f-address').value  = info.address;
+    if (info.note)     document.getElementById('f-note').value     = info.note;
+
+    toast('名片辨識完成，請確認後儲存');
+  } catch (err) {
+    statusEl.textContent = `❌ 辨識失敗：${err.message}`;
+    btn.disabled = false;
+    btn.textContent = '✨ 辨識名片';
+  }
 }
 
 // ── Toast ──────────────────────────────────────────────────────
