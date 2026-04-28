@@ -361,7 +361,21 @@ header {
   gap: 6px;
   flex-shrink: 0;
   padding-top: 2px;
+  align-items: flex-start;
 }
+
+.btn-star {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 3px 5px;
+  line-height: 1;
+  opacity: 0.3;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.btn-star:hover { opacity: 0.7; transform: scale(1.2); }
+.btn-star.active { opacity: 1; }
 
 /* ── INDUSTRY COLORS ── */
 .ind-金融      { background: #EEF2FF; color: #3730A3; }
@@ -704,6 +718,7 @@ header {
   </div>
   <div class="filter-tags" id="filter-tags">
     <span class="tag active" data-ind="全部" onclick="setFilter(this)">全部</span>
+    <span class="tag" data-ind="⭐重點" onclick="setFilter(this)">⭐ 重點窗口</span>
     <span class="tag" data-ind="金融" onclick="setFilter(this)">金融</span>
     <span class="tag" data-ind="精品鐘錶" onclick="setFilter(this)">精品鐘錶</span>
     <span class="tag" data-ind="零售百貨" onclick="setFilter(this)">零售百貨</span>
@@ -1003,7 +1018,8 @@ function render() {
 
   let all = Object.entries(contacts).map(([id, d]) => ({ id, ...d }));
 
-  if (activeFilter !== '全部') all = all.filter(c => c.industry === activeFilter);
+  if (activeFilter === '⭐重點') all = all.filter(c => c.isKey);
+  else if (activeFilter !== '全部') all = all.filter(c => c.industry === activeFilter);
   if (q) all = all.filter(c =>
     [c.company, c.name, c.dept, c.title, c.phone, c.phone2, c.email, c.address, c.note]
       .some(v => v && v.toLowerCase().includes(q))
@@ -1070,7 +1086,7 @@ function contactRowHTML(c) {
   return `
   <div class="contact-item">
     <div class="contact-main">
-      <div class="contact-name">${esc(c.name || '—')}</div>
+      <div class="contact-name">${esc(c.name || '—')}${c.isKey ? ' <span style="font-size:12px;color:#f59e0b" title="重點窗口">⭐</span>' : ''}</div>
       ${meta ? `<div class="contact-meta">${esc(meta)}</div>` : ''}
       <div class="contact-info">
         ${c.phone ? `<span class="contact-info-item">
@@ -1093,10 +1109,20 @@ function contactRowHTML(c) {
       ${c.note ? `<div class="contact-note">💬 ${esc(c.note)}</div>` : ''}
     </div>
     <div class="contact-actions">
+      <button class="btn-star ${c.isKey ? 'active' : ''}" title="${c.isKey ? '取消重點窗口' : '標為重點窗口'}" onclick="toggleKey('${c.id}',event)">⭐</button>
       <button class="btn btn-outline btn-sm" onclick="openDrawer('${c.id}')">編輯</button>
       <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteContact('${c.id}','${esc(c.name)}')">刪除</button>
     </div>
   </div>`;
+}
+
+function toggleKey(id, e) {
+  e.stopPropagation();
+  if (!contacts[id]) return;
+  const newVal = !contacts[id].isKey;
+  ref.child(id).update({ isKey: newVal }).then(() => {
+    toast(newVal ? '⭐ 已標為重點窗口' : '已取消重點窗口');
+  });
 }
 
 function esc(s) {
