@@ -1360,7 +1360,10 @@ function openOCR() {
   document.getElementById('ocr-preview-img').src = '';
   document.getElementById('ocr-drop').style.display = 'flex';
   document.getElementById('ocr-status').textContent = '';
-  document.getElementById('ocr-analyze-btn').style.display = 'none';
+  const _ocrBtn = document.getElementById('ocr-analyze-btn');
+  _ocrBtn.style.display = 'none';
+  _ocrBtn.disabled = false;
+  _ocrBtn.textContent = '✨ 辨識名片';
   document.getElementById('ocr-input').value = '';
 }
 
