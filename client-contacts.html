@@ -1501,10 +1501,11 @@ async function analyzeCard() {
 
   const mediaType = ocrImageType === 'image/png' ? 'image/png' : 'image/jpeg';
 
+  const allIndustries = [...DEFAULT_INDUSTRIES, ...getCustomIndustries()].join('、');
   const prompt = `請從這張名片圖片中提取聯絡資訊，以JSON格式回傳，欄位如下：
 {
   "company": "公司名稱",
-  "industry": "產業（從以下選一個：金融、精品鐘錶、零售百貨、能源、科技、傳產、保養生技、大學EMBA、其他）",
+  "industry": "產業（參考選項：${allIndustries}；若名片有更精確的產業類型可自行填寫）",
   "name": "姓名",
   "dept": "部門",
   "title": "職稱",
@@ -1553,7 +1554,30 @@ async function analyzeCard() {
     closeOCR();
     openDrawer();
     if (info.company)  document.getElementById('f-company').value  = info.company;
-    if (info.industry) document.getElementById('f-industry').value = info.industry;
+    if (info.industry) {
+      const sel = document.getElementById('f-industry');
+      sel.value = info.industry;
+      if (sel.value !== info.industry) {
+        // OCR 回傳的產業不在清單中，自動新增
+        const custom = getCustomIndustries();
+        if (![...DEFAULT_INDUSTRIES, ...custom].includes(info.industry)) {
+          custom.push(info.industry);
+          localStorage.setItem('customIndustries', JSON.stringify(custom));
+          const opt = document.createElement('option');
+          opt.value = info.industry; opt.textContent = info.industry;
+          sel.appendChild(opt);
+          const filterTags = document.getElementById('filter-tags');
+          if (!filterTags.querySelector(`[data-ind="${CSS.escape(info.industry)}"]`)) {
+            const span = document.createElement('span');
+            span.className = 'tag'; span.dataset.ind = info.industry;
+            span.textContent = info.industry;
+            span.onclick = () => setFilter(span);
+            filterTags.appendChild(span);
+          }
+        }
+        sel.value = info.industry;
+      }
+    }
     if (info.name)     document.getElementById('f-name').value     = info.name;
     if (info.dept)     document.getElementById('f-dept').value     = info.dept;
     if (info.title)    document.getElementById('f-title').value    = info.title;
