@@ -768,12 +768,12 @@ header {
               <option>大學EMBA</option>
               <option>其他</option>
             </select>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="showAddIndustry()" title="新增產業別" style="flex-shrink:0;padding:0 10px;height:36px;font-size:18px;line-height:1">＋</button>
+            <button type="button" onclick="showAddIndustry()" title="新增產業別" style="flex-shrink:0;width:36px;height:36px;border:1px solid #ccc;border-radius:6px;background:#f9f9f9;color:#333;font-size:20px;line-height:1;cursor:pointer">＋</button>
           </div>
           <div id="add-industry-row" style="display:none;margin-top:6px;gap:6px;align-items:center">
             <input class="form-input" id="new-industry-input" placeholder="輸入新產業名稱" style="flex:1" onkeydown="if(event.key==='Enter')confirmAddIndustry();if(event.key==='Escape')cancelAddIndustry()">
             <button type="button" class="btn btn-primary btn-sm" onclick="confirmAddIndustry()" style="flex-shrink:0">確認</button>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="cancelAddIndustry()" style="flex-shrink:0">取消</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="cancelAddIndustry()" style="flex-shrink:0">取消</button>
           </div>
         </div>
       </div>
