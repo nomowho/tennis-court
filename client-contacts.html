@@ -268,6 +268,8 @@ header {
   letter-spacing: 0.03em;
   white-space: nowrap;
   flex-shrink: 0;
+  background: #F3F4F6;
+  color: #374151;
 }
 
 .company-name {
@@ -753,19 +755,26 @@ header {
         </div>
         <div class="form-group">
           <label class="form-label">產業 *</label>
-          <select class="form-select" id="f-industry">
-            <option value="">請選擇</option>
-            <option>金融</option>
-            <option>精品鐘錶</option>
-            <option>零售百貨</option>
-            <option>能源</option>
-            <option>科技</option>
-
-            <option>傳產</option>
-            <option>保養生技</option>
-            <option>大學EMBA</option>
-            <option>其他</option>
-          </select>
+          <div style="display:flex;gap:6px;align-items:center">
+            <select class="form-select" id="f-industry" style="flex:1">
+              <option value="">請選擇</option>
+              <option>金融</option>
+              <option>精品鐘錶</option>
+              <option>零售百貨</option>
+              <option>能源</option>
+              <option>科技</option>
+              <option>傳產</option>
+              <option>保養生技</option>
+              <option>大學EMBA</option>
+              <option>其他</option>
+            </select>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="showAddIndustry()" title="新增產業別" style="flex-shrink:0;padding:0 10px;height:36px;font-size:18px;line-height:1">＋</button>
+          </div>
+          <div id="add-industry-row" style="display:none;margin-top:6px;gap:6px;align-items:center">
+            <input class="form-input" id="new-industry-input" placeholder="輸入新產業名稱" style="flex:1" onkeydown="if(event.key==='Enter')confirmAddIndustry();if(event.key==='Escape')cancelAddIndustry()">
+            <button type="button" class="btn btn-primary btn-sm" onclick="confirmAddIndustry()" style="flex-shrink:0">確認</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="cancelAddIndustry()" style="flex-shrink:0">取消</button>
+          </div>
         </div>
       </div>
       <div class="form-row">
@@ -964,6 +973,72 @@ ref.on('value', snap => {
   document.getElementById('sync-status').style.color = '#f87171';
   document.getElementById('sync-status').title = '連線失敗';
 });
+// ── Custom Industries ──────────────────────────────────────────
+const DEFAULT_INDUSTRIES = ['金融','精品鐘錶','零售百貨','能源','科技','傳產','保養生技','大學EMBA','其他'];
+
+function getCustomIndustries() {
+  return JSON.parse(localStorage.getItem('customIndustries') || '[]');
+}
+
+function loadCustomIndustries() {
+  const custom = getCustomIndustries();
+  if (!custom.length) return;
+  const select = document.getElementById('f-industry');
+  const filterTags = document.getElementById('filter-tags');
+  custom.forEach(ind => {
+    if (![...select.options].some(o => o.value === ind)) {
+      const opt = document.createElement('option');
+      opt.value = ind; opt.textContent = ind;
+      select.appendChild(opt);
+    }
+    if (!filterTags.querySelector(`[data-ind="${CSS.escape(ind)}"]`)) {
+      const span = document.createElement('span');
+      span.className = 'tag';
+      span.dataset.ind = ind;
+      span.textContent = ind;
+      span.onclick = () => setFilter(span);
+      filterTags.appendChild(span);
+    }
+  });
+}
+
+function showAddIndustry() {
+  const row = document.getElementById('add-industry-row');
+  row.style.display = 'flex';
+  document.getElementById('new-industry-input').focus();
+}
+
+function cancelAddIndustry() {
+  document.getElementById('add-industry-row').style.display = 'none';
+  document.getElementById('new-industry-input').value = '';
+}
+
+function confirmAddIndustry() {
+  const input = document.getElementById('new-industry-input');
+  const name = input.value.trim();
+  if (!name) { toast('請輸入產業名稱'); return; }
+  const all = [...DEFAULT_INDUSTRIES, ...getCustomIndustries()];
+  if (all.includes(name)) { toast('此產業已存在'); return; }
+  const custom = getCustomIndustries();
+  custom.push(name);
+  localStorage.setItem('customIndustries', JSON.stringify(custom));
+  const select = document.getElementById('f-industry');
+  const opt = document.createElement('option');
+  opt.value = name; opt.textContent = name;
+  select.appendChild(opt);
+  select.value = name;
+  const filterTags = document.getElementById('filter-tags');
+  const span = document.createElement('span');
+  span.className = 'tag';
+  span.dataset.ind = name;
+  span.textContent = name;
+  span.onclick = () => setFilter(span);
+  filterTags.appendChild(span);
+  cancelAddIndustry();
+  toast(`已新增產業：${name}`);
+}
+
+loadCustomIndustries();
 initDragSort();
 
 // ── Company order (drag-to-reorder) ────────────────────────────
