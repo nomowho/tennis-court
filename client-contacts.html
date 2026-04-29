@@ -1034,6 +1034,7 @@ function confirmAddIndustry() {
   span.textContent = name;
   span.onclick = () => setFilter(span);
   filterTags.appendChild(span);
+  span.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
   cancelAddIndustry();
   toast(`已新增產業：${name}`);
 }
