@@ -975,17 +975,17 @@ ref.on('value', snap => {
 });
 // ── Custom Industries ──────────────────────────────────────────
 const DEFAULT_INDUSTRIES = ['金融','精品鐘錶','零售百貨','能源','科技','傳產','保養生技','大學EMBA','其他'];
+let customIndustriesList = [];
+const customIndustriesRef = db.ref('settings/customIndustries');
 
 function getCustomIndustries() {
-  return JSON.parse(localStorage.getItem('customIndustries') || '[]');
+  return customIndustriesList;
 }
 
-function loadCustomIndustries() {
-  const custom = getCustomIndustries();
-  if (!custom.length) return;
+function _syncIndustryUI(list) {
   const select = document.getElementById('f-industry');
   const filterTags = document.getElementById('filter-tags');
-  custom.forEach(ind => {
+  list.forEach(ind => {
     if (![...select.options].some(o => o.value === ind)) {
       const opt = document.createElement('option');
       opt.value = ind; opt.textContent = ind;
@@ -1002,6 +1002,12 @@ function loadCustomIndustries() {
   });
 }
 
+customIndustriesRef.on('value', snap => {
+  const data = snap.val();
+  customIndustriesList = Array.isArray(data) ? data : [];
+  _syncIndustryUI(customIndustriesList);
+});
+
 function showAddIndustry() {
   const row = document.getElementById('add-industry-row');
   row.style.display = 'flex';
@@ -1017,29 +1023,31 @@ function confirmAddIndustry() {
   const input = document.getElementById('new-industry-input');
   const name = input.value.trim();
   if (!name) { toast('請輸入產業名稱'); return; }
-  const all = [...DEFAULT_INDUSTRIES, ...getCustomIndustries()];
+  const all = [...DEFAULT_INDUSTRIES, ...customIndustriesList];
   if (all.includes(name)) { toast('此產業已存在'); return; }
-  const custom = getCustomIndustries();
-  custom.push(name);
-  localStorage.setItem('customIndustries', JSON.stringify(custom));
+  const updated = [...customIndustriesList, name];
+  customIndustriesRef.set(updated);
   const select = document.getElementById('f-industry');
-  const opt = document.createElement('option');
-  opt.value = name; opt.textContent = name;
-  select.appendChild(opt);
   select.value = name;
-  const filterTags = document.getElementById('filter-tags');
-  const span = document.createElement('span');
-  span.className = 'tag';
-  span.dataset.ind = name;
-  span.textContent = name;
-  span.onclick = () => setFilter(span);
-  filterTags.appendChild(span);
-  span.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
   cancelAddIndustry();
   toast(`已新增產業：${name}`);
 }
 
-loadCustomIndustries();
+// migrate existing localStorage data to Firebase (one-time)
+(function migrateLocalIndustries() {
+  const local = localStorage.getItem('customIndustries');
+  if (!local) return;
+  try {
+    const arr = JSON.parse(local);
+    if (!Array.isArray(arr) || !arr.length) return;
+    customIndustriesRef.once('value', snap => {
+      const existing = snap.val() || [];
+      const merged = [...new Set([...existing, ...arr])];
+      if (merged.length > existing.length) customIndustriesRef.set(merged);
+    });
+    localStorage.removeItem('customIndustries');
+  } catch(e) {}
+})();
 initDragSort();
 
 // ── Company order (drag-to-reorder) ────────────────────────────
@@ -1559,22 +1567,10 @@ async function analyzeCard() {
       const sel = document.getElementById('f-industry');
       sel.value = info.industry;
       if (sel.value !== info.industry) {
-        // OCR 回傳的產業不在清單中，自動新增
-        const custom = getCustomIndustries();
-        if (![...DEFAULT_INDUSTRIES, ...custom].includes(info.industry)) {
-          custom.push(info.industry);
-          localStorage.setItem('customIndustries', JSON.stringify(custom));
-          const opt = document.createElement('option');
-          opt.value = info.industry; opt.textContent = info.industry;
-          sel.appendChild(opt);
-          const filterTags = document.getElementById('filter-tags');
-          if (!filterTags.querySelector(`[data-ind="${CSS.escape(info.industry)}"]`)) {
-            const span = document.createElement('span');
-            span.className = 'tag'; span.dataset.ind = info.industry;
-            span.textContent = info.industry;
-            span.onclick = () => setFilter(span);
-            filterTags.appendChild(span);
-          }
+        // OCR 回傳的產業不在清單中，自動新增到 Firebase
+        if (![...DEFAULT_INDUSTRIES, ...customIndustriesList].includes(info.industry)) {
+          const updated = [...customIndustriesList, info.industry];
+          customIndustriesRef.set(updated);
         }
         sel.value = info.industry;
       }
