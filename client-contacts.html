@@ -1298,7 +1298,18 @@ function deleteContact(id, name) {
   document.getElementById('confirm-msg').textContent = `確定要刪除「${name}」的聯絡資訊嗎？`;
   document.getElementById('confirm-overlay').classList.add('open');
   document.getElementById('confirm-ok').onclick = () => {
-    ref.child(pendingDeleteId).remove().then(() => { toast('已刪除'); closeConfirm(); });
+    const deletedCompany = contacts[pendingDeleteId]?.company;
+    ref.child(pendingDeleteId).remove().then(() => {
+      if (deletedCompany) {
+        const remaining = Object.values(contacts).filter(c => c.company === deletedCompany);
+        if (remaining.length <= 1) {
+          companyOrder = companyOrder.filter(c => c !== deletedCompany);
+          localStorage.setItem('companyOrder', JSON.stringify(companyOrder));
+        }
+      }
+      toast('已刪除');
+      closeConfirm();
+    });
   };
 }
 
