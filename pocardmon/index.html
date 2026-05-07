@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pocardmon — App Store</title>
+<title>名片溫度計 — App Store</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
 
   :root {
     --black: #0d0d0d;
@@ -13,8 +13,6 @@
     --grey: #f5f5f7;
     --mid: #6e6e73;
     --accent: #1c1c1e;
-    --blue: #3a7bd5;
-    --light-blue: #dde8f5;
     --card-dark: #1a1a1a;
   }
 
@@ -38,7 +36,6 @@
     border-bottom: 1px solid rgba(0,0,0,0.06);
   }
 
-  /* ICON */
   .app-icon {
     width: 120px; height: 120px;
     border-radius: 26px;
@@ -50,15 +47,15 @@
     animation: iconFloat 3.5s ease-in-out infinite;
   }
   @keyframes iconFloat {
-    0%,100%{ transform: translateY(0) rotate(-1.5deg); }
-    50%{ transform: translateY(-5px) rotate(1.5deg); }
+    0%,100%{ transform: translateY(0); }
+    50%{ transform: translateY(-5px); }
   }
 
   .app-name {
-    font-family: 'Fredoka One', cursive;
-    font-size: 38px;
+    font-size: 34px;
+    font-weight: 900;
     color: var(--black);
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     text-align: center;
   }
 
@@ -95,12 +92,8 @@
   }
   .stars { color: #f5a623; letter-spacing: -1px; }
 
-  /* ── DIVIDER ── */
-  .divider {
-    height: 8px; background: var(--grey);
-  }
+  .divider { height: 8px; background: var(--grey); }
 
-  /* ── SECTION ── */
   .section {
     background: var(--white);
     padding: 36px 24px;
@@ -113,7 +106,6 @@
     margin-bottom: 16px;
   }
 
-  /* ── INTRO TEXT ── */
   .intro-hook {
     font-size: 22px; font-weight: 900; line-height: 1.4;
     color: var(--black); margin-bottom: 16px;
@@ -125,7 +117,6 @@
     font-style: normal; font-weight: 700; color: var(--black);
   }
 
-  /* ── FEATURES ── */
   .features { display: flex; flex-direction: column; gap: 0; }
   .feature-item {
     display: flex; gap: 18px; align-items: flex-start;
@@ -153,7 +144,6 @@
     font-size: 14px; color: #555; line-height: 1.7;
   }
 
-  /* ── CLOSING ── */
   .closing {
     background: var(--black);
     padding: 48px 24px;
@@ -164,12 +154,9 @@
     font-size: 18px; font-weight: 700; color: rgba(255,255,255,0.6);
     line-height: 1.6; max-width: 280px;
   }
-  .closing-quote span {
-    color: white; font-size: 20px;
-  }
+  .closing-quote span { color: white; font-size: 20px; }
   .closing-name {
-    font-family: 'Fredoka One', cursive;
-    font-size: 28px; color: white; letter-spacing: 2px;
+    font-size: 26px; font-weight: 900; color: white; letter-spacing: 3px;
   }
   .closing-btn {
     background: white; color: var(--black);
@@ -180,10 +167,6 @@
     transition: transform 0.15s;
   }
   .closing-btn:hover { transform: scale(1.04); }
-
-  /* ── CARD ICON SVG reusable ── */
-  .card-svg { filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2)); }
-
 </style>
 </head>
 <body>
@@ -207,9 +190,7 @@
           <stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>
           <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
         </radialGradient>
-        <clipPath id="ballClip">
-          <circle cx="74" cy="74" r="67"/>
-        </clipPath>
+        <clipPath id="ballClip"><circle cx="74" cy="74" r="67"/></clipPath>
       </defs>
       <circle cx="74" cy="76" r="69" fill="rgba(0,0,0,0.12)"/>
       <path d="M7 74 A67 67 0 0 1 141 74 Z" fill="url(#topGrad)" clip-path="url(#ballClip)"/>
@@ -219,18 +200,9 @@
         <rect x="35" y="44" width="52" height="5" rx="2.5" fill="white"/>
         <rect x="35" y="53" width="36" height="3" rx="1.5" fill="white"/>
         <rect x="35" y="59" width="26" height="3" rx="1.5" fill="white"/>
-        <rect x="14" y="65" width="45" height="2.5" rx="1.2" fill="white" opacity="0.4"/>
-        <rect x="14" y="69" width="32" height="2" rx="1" fill="white" opacity="0.3"/>
       </g>
       <path d="M7 74 A67 67 0 0 0 141 74 Z" fill="url(#botGrad)" clip-path="url(#ballClip)"/>
-      <g clip-path="url(#ballClip)" opacity="0.25">
-        <rect x="22" y="88" width="44" height="3.5" rx="1.7" fill="#7aaacc"/>
-        <rect x="22" y="95" width="30" height="2.5" rx="1.2" fill="#7aaacc"/>
-        <rect x="22" y="101" width="22" height="2.5" rx="1.2" fill="#7aaacc"/>
-      </g>
       <rect x="7" y="68" width="134" height="12" fill="#111" clip-path="url(#ballClip)"/>
-      <line x1="7" y1="68" x2="141" y2="68" stroke="rgba(255,255,255,0.1)" stroke-width="0.8" clip-path="url(#ballClip)"/>
-      <line x1="7" y1="80" x2="141" y2="80" stroke="rgba(0,0,0,0.2)" stroke-width="0.8" clip-path="url(#ballClip)"/>
       <circle cx="74" cy="74" r="24" fill="#0f0f0f" stroke="#2a2a2a" stroke-width="2"/>
       <clipPath id="personClip"><circle cx="74" cy="74" r="23"/></clipPath>
       <g clip-path="url(#personClip)">
@@ -243,8 +215,8 @@
     </svg>
   </div>
 
-  <div class="app-name">Pocardmon</div>
-  <div class="app-tagline">掃它！收它！<br>每張名片都是一隻等待收服的夥伴</div>
+  <div class="app-name">名片溫度計</div>
+  <div class="app-tagline">掃進來、追起來<br>不讓客戶冷掉的業務工具</div>
 
   <div class="cta-row">
     <button class="btn-download">免費下載</button>
@@ -260,12 +232,12 @@
 <!-- ── INTRO ── -->
 <div class="section">
   <div class="section-label">關於這個 App</div>
-  <div class="intro-hook">你有多久沒聯絡那個<br>說要合作的人了？</div>
+  <div class="intro-hook">你有多久沒聯絡<br>那個說好下次合作的客戶了？</div>
   <div class="intro-body">
     展示會上收了 30 張名片，卻一張一張手動輸入到天亮？<br><br>
-    想找上次聊得來的那個設計師，翻了十分鐘通訊錄還是沒找到？<br><br>
-    三個月前說好要介紹案子的人，你還記得他叫什麼嗎？<br><br>
-    <em>這些尷尬，Pocardmon 終結它。</em>
+    想找上次聊得來的那位採購，翻了十分鐘通訊錄還是沒找到？<br><br>
+    三個月前說好要跟進的客戶，溫度早就冷透了。<br><br>
+    <em>這些尷尬，名片溫度計終結它。</em>
   </div>
 </div>
 
@@ -277,34 +249,34 @@
   <div class="features">
 
     <div class="feature-item">
-      <div class="feature-emoji">🎴</div>
+      <div class="feature-emoji">📷</div>
       <div class="feature-text">
-        <h3>一秒掃描，精準辨識</h3>
-        <p>拿起相機對準名片，智慧辨識引擎快速擷取姓名、職稱、公司、電話、Email，連中英日文混排都難不倒它。不用手動輸入，不怕打錯字，掃完即存，乾淨俐落。</p>
+        <h3>AI 掃描，一秒建檔</h3>
+        <p>拿起相機對準名片，AI 自動辨識姓名、職稱、公司、電話、Email，中英文混排都難不倒。不用手動輸入，不怕打錯字，掃完即存。</p>
       </div>
     </div>
 
     <div class="feature-item">
-      <div class="feature-emoji">📖</div>
+      <div class="feature-emoji">🗂️</div>
       <div class="feature-text">
-        <h3>完整卡面，一眼看懂</h3>
-        <p>每位聯絡人都有專屬頁面。標籤分類、場合備註、會面紀錄一目了然——下次見面前三十秒複習，對話馬上有溫度。</p>
+        <h3>產業分層，一眼掌握</h3>
+        <p>聯絡人依產業、公司自動分群，金融、科技、零售各自歸位。VIP 標記、標籤篩選、業績追蹤，讓你的名單有重點、有溫度。</p>
       </div>
     </div>
 
     <div class="feature-item">
       <div class="feature-emoji">🔔</div>
       <div class="feature-text">
-        <h3>夥伴提醒</h3>
-        <p>「你有 3 位夥伴超過 60 天沒聯絡了。」Pocardmon 會提醒你，在關係冷掉之前，主動出擊。</p>
+        <h3>冷掉提醒，主動出擊</h3>
+        <p>「有 3 位客戶超過 30 天沒聯繫了。」每天主動通知，在關係冷掉之前，讓你先一步出擊。</p>
       </div>
     </div>
 
     <div class="feature-item">
       <div class="feature-emoji">💬</div>
       <div class="feature-text">
-        <h3>一鍵出擊</h3>
-        <p>LINE、電話、Email，直接從卡面跳轉。聯絡人脈，零摩擦、零尷尬。</p>
+        <h3>LINE、電話、Email 一鍵跳轉</h3>
+        <p>直接從聯絡人頁面撥打、傳訊、寄信。跟進客戶零摩擦，每個動作都快一秒。</p>
       </div>
     </div>
 
@@ -325,14 +297,13 @@
 <div class="closing">
   <div class="closing-quote">
     人脈不是收集來放著的。<br>
-    <span>是用來發光的。</span>
+    <span>是用來保持溫度的。</span>
   </div>
-  <div class="closing-name">Pocardmon</div>
-  <button class="closing-btn">開始你的人脈圖鑑 →</button>
+  <div class="closing-name">名片溫度計</div>
+  <button class="closing-btn">立即免費下載 →</button>
 </div>
 
 <script>
-  // Scroll reveal for feature items
   const items = document.querySelectorAll('.feature-item');
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((e, i) => {
