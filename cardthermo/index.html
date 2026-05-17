@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>名片溫度計 — App Store</title>
+<title>名片溫度計 NOMI — 不讓客戶冷掉的業務工具</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
 
@@ -12,8 +12,8 @@
     --white: #ffffff;
     --grey: #f5f5f7;
     --mid: #6e6e73;
-    --accent: #1c1c1e;
-    --card-dark: #1a1a1a;
+    --accent: #7C3AED;
+    --warm: #EEEBE6;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -39,13 +39,11 @@
   .app-icon {
     width: 120px; height: 120px;
     border-radius: 26px;
-    background: var(--white);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.13), 0 1px 4px rgba(0,0,0,0.08);
     overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.13), 0 1px 4px rgba(0,0,0,0.08);
     animation: iconFloat 3.5s ease-in-out infinite;
   }
+  .app-icon img { width: 100%; height: 100%; object-fit: cover; }
   @keyframes iconFloat {
     0%,100%{ transform: translateY(0); }
     50%{ transform: translateY(-5px); }
@@ -82,6 +80,8 @@
     border: none;
     cursor: pointer;
     letter-spacing: 1px;
+    text-decoration: none;
+    display: inline-block;
     transition: transform 0.15s, box-shadow 0.15s;
     box-shadow: 0 2px 12px rgba(0,0,0,0.2);
   }
@@ -117,6 +117,7 @@
     font-style: normal; font-weight: 700; color: var(--black);
   }
 
+  /* ── FEATURES ── */
   .features { display: flex; flex-direction: column; gap: 0; }
   .feature-item {
     display: flex; gap: 18px; align-items: flex-start;
@@ -130,9 +131,9 @@
   .feature-item.visible { opacity: 1; transform: translateY(0); }
 
   .feature-emoji {
-    font-size: 32px; flex-shrink: 0;
+    font-size: 28px; flex-shrink: 0;
     width: 52px; height: 52px;
-    background: var(--grey);
+    background: var(--warm);
     border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
   }
@@ -144,6 +145,15 @@
     font-size: 14px; color: #555; line-height: 1.7;
   }
 
+  /* ── NEW BADGE ── */
+  .new-badge {
+    display: inline-block; background: var(--accent);
+    color: white; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 6px; margin-left: 8px;
+    vertical-align: middle; letter-spacing: 0.5px;
+  }
+
+  /* ── CLOSING ── */
   .closing {
     background: var(--black);
     padding: 48px 24px;
@@ -164,9 +174,17 @@
     font-weight: 900; font-size: 15px;
     padding: 14px 36px; border-radius: 100px;
     border: none; cursor: pointer; letter-spacing: 1px;
+    text-decoration: none; display: inline-block;
     transition: transform 0.15s;
   }
   .closing-btn:hover { transform: scale(1.04); }
+
+  /* ── PRIVACY ── */
+  .footer {
+    background: var(--grey); padding: 20px 24px;
+    text-align: center; font-size: 12px; color: var(--mid);
+  }
+  .footer a { color: var(--mid); }
 </style>
 </head>
 <body>
@@ -174,52 +192,14 @@
 <!-- ── HERO ── -->
 <div class="hero">
   <div class="app-icon">
-    <svg width="108" height="108" viewBox="0 0 148 148" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="topGrad" cx="35%" cy="25%" r="72%">
-          <stop offset="0%" stop-color="#444"/>
-          <stop offset="50%" stop-color="#1c1c1c"/>
-          <stop offset="100%" stop-color="#080808"/>
-        </radialGradient>
-        <radialGradient id="botGrad" cx="35%" cy="22%" r="72%">
-          <stop offset="0%" stop-color="#ffffff"/>
-          <stop offset="55%" stop-color="#f0f4f8"/>
-          <stop offset="100%" stop-color="#dde8f0"/>
-        </radialGradient>
-        <radialGradient id="gloss" cx="38%" cy="18%" r="52%">
-          <stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>
-          <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-        </radialGradient>
-        <clipPath id="ballClip"><circle cx="74" cy="74" r="67"/></clipPath>
-      </defs>
-      <circle cx="74" cy="76" r="69" fill="rgba(0,0,0,0.12)"/>
-      <path d="M7 74 A67 67 0 0 1 141 74 Z" fill="url(#topGrad)" clip-path="url(#ballClip)"/>
-      <g clip-path="url(#ballClip)" opacity="0.22">
-        <circle cx="22" cy="54" r="9" fill="white"/>
-        <circle cx="22" cy="54" r="5" fill="white" opacity="0.5"/>
-        <rect x="35" y="44" width="52" height="5" rx="2.5" fill="white"/>
-        <rect x="35" y="53" width="36" height="3" rx="1.5" fill="white"/>
-        <rect x="35" y="59" width="26" height="3" rx="1.5" fill="white"/>
-      </g>
-      <path d="M7 74 A67 67 0 0 0 141 74 Z" fill="url(#botGrad)" clip-path="url(#ballClip)"/>
-      <rect x="7" y="68" width="134" height="12" fill="#111" clip-path="url(#ballClip)"/>
-      <circle cx="74" cy="74" r="24" fill="#0f0f0f" stroke="#2a2a2a" stroke-width="2"/>
-      <clipPath id="personClip"><circle cx="74" cy="74" r="23"/></clipPath>
-      <g clip-path="url(#personClip)">
-        <circle cx="74" cy="66" r="7.5" fill="white"/>
-        <ellipse cx="74" cy="83" rx="14" ry="10" fill="white"/>
-      </g>
-      <circle cx="74" cy="74" r="67" fill="url(#gloss)"/>
-      <circle cx="74" cy="74" r="67" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
-      <circle cx="74" cy="74" r="69" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="2"/>
-    </svg>
+    <img src="icon.png" alt="名片溫度計 NOMI">
   </div>
 
-  <div class="app-name">名片溫度計</div>
-  <div class="app-tagline">掃進來、追起來<br>不讓客戶冷掉的業務工具</div>
+  <div class="app-name">名片溫度計 NOMI</div>
+  <div class="app-tagline">展覽結束，手上一疊名片。<br>三天後，你還記得哪幾張？</div>
 
   <div class="cta-row">
-    <a href="https://apps.apple.com/tw/app/%E5%90%8D%E7%89%87%E6%BA%AB%E5%BA%A6%E8%A8%88/id6766845938" target="_blank" class="btn-download" style="text-decoration:none;display:inline-block;">免費下載</a>
+    <a href="https://apps.apple.com/tw/app/%E5%90%8D%E7%89%87%E6%BA%AB%E5%BA%A6%E8%A8%88/id6766845938" target="_blank" class="btn-download">免費下載</a>
     <div class="rating">
       <span class="stars">★★★★★</span>
       <span>4.9</span>
@@ -237,7 +217,7 @@
     展示會上收了 30 張名片，卻一張一張手動輸入到天亮？<br><br>
     想找上次聊得來的那位採購，翻了十分鐘通訊錄還是沒找到？<br><br>
     三個月前說好要跟進的客戶，溫度早就冷透了。<br><br>
-    <em>這些尷尬，名片溫度計終結它。</em>
+    <em>NOMI 幫你記住每一個人。</em>
   </div>
 </div>
 
@@ -252,15 +232,15 @@
       <div class="feature-emoji">📷</div>
       <div class="feature-text">
         <h3>AI 掃描，一秒建檔</h3>
-        <p>拿起相機對準名片，AI 自動辨識姓名、職稱、公司、電話、Email，中英文混排都難不倒。不用手動輸入，不怕打錯字，掃完即存。</p>
+        <p>拍下名片，姓名、公司、職稱、電話自動辨識完成。正反兩面都掃，英文姓名一個不漏。三階段自動重試，低光源、側放名片也能辨識。</p>
       </div>
     </div>
 
     <div class="feature-item">
       <div class="feature-emoji">🗂️</div>
       <div class="feature-text">
-        <h3>產業分層，一眼掌握</h3>
-        <p>聯絡人依產業、公司自動分群，金融、科技、零售各自歸位。VIP 標記、標籤篩選、業績追蹤，讓你的名單有重點、有溫度。</p>
+        <h3>連續掃名片 <span class="new-badge">NEW</span></h3>
+        <p>展覽、活動結束後，一次掃完整疊名片，加入清單後批次儲存。再也不用一張一張處理。</p>
       </div>
     </div>
 
@@ -268,7 +248,15 @@
       <div class="feature-emoji">🔔</div>
       <div class="feature-text">
         <h3>冷掉提醒，主動出擊</h3>
-        <p>「有 3 位客戶超過 30 天沒聯繫了。」每天主動通知，在關係冷掉之前，讓你先一步出擊。</p>
+        <p>超過設定天數沒聯繫，每天早上主動通知。自訂 1–365 天門檻，VIP 客戶設 7 天，一般客戶設 30 天。</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-emoji">👥</div>
+      <div class="feature-text">
+        <h3>同步 iOS 通訊錄 <span class="new-badge">NEW</span></h3>
+        <p>一鍵將所有聯絡人同步到 iPhone 內建通訊錄，換手機、用原生電話 App 都沒問題。</p>
       </div>
     </div>
 
@@ -283,8 +271,8 @@
     <div class="feature-item">
       <div class="feature-emoji">📊</div>
       <div class="feature-text">
-        <h3>匯出備份，資料帶著走</h3>
-        <p>一鍵匯出 Excel / CSV，換手機不怕、公司換系統不怕。你的人脈，永遠是你的。</p>
+        <h3>匯入 Excel，依頁籤分產業 <span class="new-badge">NEW</span></h3>
+        <p>金融、科技各自一個工作表，匯入後自動歸類到對應產業。一次整理好幾百筆聯絡人。</p>
       </div>
     </div>
 
@@ -299,8 +287,12 @@
     人脈不是收集來放著的。<br>
     <span>是用來保持溫度的。</span>
   </div>
-  <div class="closing-name">名片溫度計</div>
-  <a href="https://apps.apple.com/tw/app/%E5%90%8D%E7%89%87%E6%BA%AB%E5%BA%A6%E8%A8%88/id6766845938" target="_blank" class="closing-btn" style="text-decoration:none;display:inline-block;">立即免費下載 →</a>
+  <div class="closing-name">名片溫度計 NOMI</div>
+  <a href="https://apps.apple.com/tw/app/%E5%90%8D%E7%89%87%E6%BA%AB%E5%BA%A6%E8%A8%88/id6766845938" target="_blank" class="closing-btn">立即免費下載 →</a>
+</div>
+
+<div class="footer">
+  <a href="privacy.html">隱私權政策</a>
 </div>
 
 <script>
@@ -308,11 +300,17 @@
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((e, i) => {
       if (e.isIntersecting) {
-        setTimeout(() => e.target.classList.add('visible'), i * 100);
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        observer.unobserve(e.target);
       }
     });
-  }, { threshold: 0.1 });
+  }, { threshold: 0.05 });
   items.forEach(el => observer.observe(el));
+
+  // fallback：若已在視窗內直接顯示
+  setTimeout(() => {
+    items.forEach(el => el.classList.add('visible'));
+  }, 1200);
 </script>
 
 </body>
