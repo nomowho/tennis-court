@@ -1439,12 +1439,37 @@ function parseCSV(text) {
 
 function confirmImport() {
   if (importData.length === 0) return;
-  const updates = {};
-  importData.forEach(d => { updates[ref.push().key] = d; });
-  ref.update(updates).then(() => {
-    toast(`已匯入 ${importData.length} 筆`);
-    closeImport();
-  });
+  const btn = document.getElementById('import-confirm-btn');
+  btn.disabled = true;
+  btn.textContent = '匯入中…';
+
+  const BATCH = 50;
+  const batches = [];
+  for (let i = 0; i < importData.length; i += BATCH) {
+    batches.push(importData.slice(i, i + BATCH));
+  }
+
+  let done = 0;
+  function nextBatch() {
+    if (done >= batches.length) {
+      toast(`✅ 已匯入 ${importData.length} 筆`);
+      btn.disabled = false;
+      btn.textContent = '匯入';
+      closeImport();
+      return;
+    }
+    const updates = {};
+    batches[done].forEach(d => { updates[ref.push().key] = d; });
+    ref.update(updates)
+      .then(() => { done++; nextBatch(); })
+      .catch(err => {
+        toast(`匯入失敗：${err.message}`);
+        btn.disabled = false;
+        btn.textContent = '匯入';
+        console.error(err);
+      });
+  }
+  nextBatch();
 }
 
 function downloadTemplate() {
