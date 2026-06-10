@@ -705,7 +705,7 @@ header {
   </div>
   <div class="header-actions">
     <button class="btn btn-ghost btn-sm" onclick="openOCR()" title="拍名片辨識">📷</button>
-    <button class="btn btn-ghost btn-sm" onclick="openImport()" title="匯入 CSV">📥</button>
+    <button class="btn btn-ghost btn-sm" onclick="openImport()" title="匯入 CSV / Excel">📥</button>
     <button class="btn btn-ghost btn-sm" onclick="exportCSV()" title="匯出">📤</button>
     <button class="btn btn-ghost btn-sm" onclick="openApiSettings()" title="API Key 設定">⚙️</button>
     <button class="btn btn-primary" onclick="openDrawer()">＋ 新增</button>
@@ -825,12 +825,12 @@ header {
 <div class="modal-overlay" id="import-overlay" onclick="handleImportOverlay(event)">
   <div class="modal">
     <div class="modal-header">
-      <h3>匯入 CSV</h3>
+      <h3>匯入 CSV / Excel</h3>
       <button class="drawer-close" onclick="closeImport()">✕</button>
     </div>
     <div class="modal-body">
       <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
-        CSV 欄位順序：<strong>公司、產業、姓名、部門、職位、電話、Email、地址、備註</strong><br>
+        欄位順序：<strong>公司、產業、姓名、部門、職位、電話、Email、地址、備註</strong><br>
         第一列為標題列，會自動跳過。
       </p>
       <div style="margin-bottom:10px;">
@@ -841,10 +841,10 @@ header {
         ondragleave="this.classList.remove('drag')"
         ondrop="handleDrop(event)">
         <div class="file-drop-icon">📁</div>
-        <p>點擊選擇 CSV 檔案</p>
-        <small>或拖曳到此處</small>
+        <p>點擊選擇 CSV 或 Excel 檔案</p>
+        <small>支援 .csv、.xlsx、.xls，或拖曳到此處</small>
       </div>
-      <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+      <input type="file" id="csv-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
       <div class="import-preview" id="import-preview" style="display:none"></div>
     </div>
     <div class="modal-footer">
@@ -916,6 +916,8 @@ header {
 <!-- TOAST -->
 <div id="toast"></div>
 
+<!-- SheetJS for Excel import -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -1102,7 +1104,7 @@ function render() {
 
   let all = Object.entries(contacts).map(([id, d]) => ({ id, ...d }));
 
-  if (activeFilter === '⭐重點') all = all.filter(c => isKeyContact(c));
+  if (activeFilter === '⭐重點') all = all.filter(c => c.isKey);
   else if (activeFilter !== '全部') all = all.filter(c => c.industry === activeFilter);
   if (q) all = all.filter(c =>
     [c.company, c.name, c.dept, c.title, c.phone, c.phone2, c.email, c.address, c.note]
@@ -1170,7 +1172,7 @@ function contactRowHTML(c) {
   return `
   <div class="contact-item">
     <div class="contact-main">
-      <div class="contact-name">${esc(c.name || '—')}${isKeyContact(c) ? ' <span style="font-size:12px;color:#f59e0b" title="重點窗口">⭐</span>' : ''}</div>
+      <div class="contact-name">${esc(c.name || '—')}${c.isKey ? ' <span style="font-size:12px;color:#f59e0b" title="重點窗口">⭐</span>' : ''}</div>
       ${meta ? `<div class="contact-meta">${esc(meta)}</div>` : ''}
       <div class="contact-info">
         ${c.phone ? `<span class="contact-info-item">
@@ -1193,7 +1195,7 @@ function contactRowHTML(c) {
       ${c.note ? `<div class="contact-note">💬 ${esc(c.note)}</div>` : ''}
     </div>
     <div class="contact-actions">
-      <button class="btn-star ${isKeyContact(c) ? 'active' : ''}" title="${isKeyContact(c) ? '取消重點窗口' : '標為重點窗口'}" onclick="toggleKey('${c.id}',event)">⭐</button>
+      <button class="btn-star ${c.isKey ? 'active' : ''}" title="${c.isKey ? '取消重點窗口' : '標為重點窗口'}" onclick="toggleKey('${c.id}',event)">⭐</button>
       <button class="btn btn-outline btn-sm" onclick="openDrawer('${c.id}')">編輯</button>
       <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteContact('${c.id}','${esc(c.name)}')">刪除</button>
     </div>
@@ -1203,17 +1205,10 @@ function contactRowHTML(c) {
 function toggleKey(id, e) {
   e.stopPropagation();
   if (!contacts[id]) return;
-  const newVal = !isKeyContact(contacts[id]);
-  const tags = [...(contacts[id].tags || [])];
-  if (newVal && !tags.includes('重點窗口')) tags.push('重點窗口');
-  if (!newVal) { const i = tags.indexOf('重點窗口'); if (i > -1) tags.splice(i, 1); }
-  ref.child(id).update({ isKey: newVal, tags }).then(() => {
+  const newVal = !contacts[id].isKey;
+  ref.child(id).update({ isKey: newVal }).then(() => {
     toast(newVal ? '⭐ 已標為重點窗口' : '已取消重點窗口');
   });
-}
-
-function isKeyContact(c) {
-  return c.isKey || (c.tags && c.tags.includes('重點窗口'));
 }
 
 function esc(s) {
@@ -1367,10 +1362,50 @@ function handleDrop(e) {
 }
 
 function handleFile(file) {
-  if (!file || !file.name.endsWith('.csv')) { toast('請選擇 .csv 檔案'); return; }
-  const reader = new FileReader();
-  reader.onload = e => parseCSV(e.target.result);
-  reader.readAsText(file, 'UTF-8');
+  if (!file) return;
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.csv')) {
+    const reader = new FileReader();
+    reader.onload = e => parseCSV(e.target.result);
+    reader.readAsText(file, 'UTF-8');
+  } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+    const reader = new FileReader();
+    reader.onload = e => parseExcel(e.target.result);
+    reader.readAsArrayBuffer(file);
+  } else {
+    toast('請選擇 .csv、.xlsx 或 .xls 檔案');
+  }
+}
+
+function parseExcel(arrayBuffer) {
+  try {
+    const wb = XLSX.read(arrayBuffer, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    if (rows.length < 2) { toast('Excel 內容太少'); return; }
+    importData = rows.slice(1).map(cols => ({
+      company:   String(cols[0] || '').trim(),
+      industry:  String(cols[1] || '其他').trim(),
+      name:      String(cols[2] || '').trim(),
+      dept:      String(cols[3] || '').trim(),
+      title:     String(cols[4] || '').trim(),
+      phone:     String(cols[5] || '').trim(),
+      email:     String(cols[6] || '').trim(),
+      address:   String(cols[7] || '').trim(),
+      note:      String(cols[8] || '').trim(),
+      createdAt: Date.now()
+    })).filter(r => r.company && r.name);
+
+    const preview = document.getElementById('import-preview');
+    preview.style.display = 'block';
+    preview.innerHTML = `✅ 解析完成，共 <strong>${importData.length}</strong> 筆有效資料<br>
+      ${importData.slice(0,3).map(r => `${r.company} · ${r.name}`).join('<br>')}
+      ${importData.length > 3 ? `<br>…等 ${importData.length} 筆` : ''}`;
+    document.getElementById('import-confirm-btn').style.display = 'inline-flex';
+  } catch(err) {
+    toast('Excel 解析失敗，請確認檔案格式');
+    console.error(err);
+  }
 }
 
 function parseCSV(text) {
