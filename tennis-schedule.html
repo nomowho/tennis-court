@@ -1,1327 +1,883 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tennis Court · 網球課程管理</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="網球課">
+<meta name="theme-color" content="#f2f2f7">
+<title>週五網球課｜青年公園</title>
 <style>
 :root {
-  --green:   #0A5C36;
-  --green2:  #0E7A48;
-  --green3:  #1A9458;
-  --purple:  #5B2D8E;
-  --purple2: #7B45B2;
-  --cream:   #F5F0E8;
-  --cream2:  #EDE6D6;
-  --gold:    #C9A84C;
-  --white:   #FFFFFF;
-  --dark:    #1A1A2E;
-  --text:    #2C2C3E;
-  --muted:   #7A7A8C;
-  --rain:    #4A6FA5;
-  --rain2:   #6B8FC7;
+  --bg: #f2f2f7; --cell: #ffffff; --cell-hl: #e5e5ea;
+  --label: #000000; --label-2: rgba(60,60,67,.6); --label-3: rgba(60,60,67,.3);
+  --sep: rgba(60,60,67,.18);
+  --fill: rgba(118,118,128,.12); --fill-2: rgba(120,120,128,.2);
+  --gray: #8e8e93; --seg-on: #ffffff;
+  --blue: #007aff; --red: #ff3b30; --orange: #ff9500; --green: #34c759; --court: #2f7d4f;
+  --bar: rgba(249,249,249,.92);
+  --blur: saturate(180%) blur(20px);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  --tabbar-h: 56px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000; --cell: #1c1c1e; --cell-hl: #2c2c2e;
+    --label: #ffffff; --label-2: rgba(235,235,245,.6); --label-3: rgba(235,235,245,.3);
+    --sep: rgba(84,84,88,.65);
+    --fill: rgba(118,118,128,.24); --fill-2: rgba(118,118,128,.36);
+    --seg-on: #636366;
+    --blue: #0a84ff; --red: #ff453a; --orange: #ff9f0a; --green: #30d158; --court: #4cc27f;
+    --bar: rgba(22,22,24,.86);
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; }
 body {
-  font-family: 'EB Garamond', 'Noto Serif TC', Georgia, serif;
-  background: var(--cream);
-  color: var(--text);
-  min-height: 100vh;
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 59px,
-      rgba(10,92,54,0.06) 59px,
-      rgba(10,92,54,0.06) 60px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 59px,
-      rgba(10,92,54,0.06) 59px,
-      rgba(10,92,54,0.06) 60px
-    );
+  background: var(--bg); color: var(--label);
+  font-family: var(--font); font-size: 17px; line-height: 1.35;
+  padding: calc(var(--safe-t) + 8px) 0 calc(var(--tabbar-h) + var(--safe-b) + 24px);
+  -webkit-font-smoothing: antialiased;
 }
+button { font: inherit; color: inherit; border: none; background: none; cursor: pointer; padding: 0; }
+input, select { font: inherit; color: inherit; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 0 16px; }
 
-/* ── HEADER ── */
-header {
-  background: var(--green);
-  position: relative;
-  overflow: hidden;
-  padding: 0;
-}
+/* 頁首 */
+.top { display: flex; align-items: flex-end; justify-content: space-between; padding: 6px 4px 10px; }
+.top h1 { margin: 0; font-size: 32px; font-weight: 700; letter-spacing: .01em; line-height: 1.15; }
+.top .sub { color: var(--label-2); font-size: 13px; margin-top: 2px; }
+.live { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--label-2); padding-bottom: 6px; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--gray); display: block; }
+.live.on i { background: var(--green); }
+.live.off i { background: var(--red); }
+.demo-bar { background: var(--orange); color: #fff; font-size: 13px; font-weight: 600; text-align: center; padding: 6px 12px; border-radius: 10px; margin-bottom: 10px; }
 
-.header-top {
-  background: var(--purple);
-  padding: 5px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.header-top span {
-  color: rgba(255,255,255,0.75);
-  font-size: 0.72rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  font-family: 'EB Garamond', serif;
-}
+.sec-title { font-size: 13px; color: var(--label-2); margin: 22px 16px 7px; text-transform: none; letter-spacing: .02em; }
+.sec-title:first-child { margin-top: 6px; }
+.sec-foot { font-size: 13px; color: var(--label-2); margin: 7px 16px 0; }
 
-.header-main {
-  padding: 28px 24px 24px;
-  position: relative;
-  z-index: 1;
-  text-align: center;
-}
+/* 卡片 */
+.card { background: var(--cell); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
+.card-pad { padding: 14px 16px; }
+.row { display: flex; align-items: center; gap: 10px; padding: 11px 16px; min-height: 48px; position: relative; }
+.row + .row::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: var(--sep); }
+.row .grow { flex: 1; min-width: 0; }
+.row .dim { color: var(--label-2); font-size: 14px; }
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.empty { text-align: center; color: var(--label-2); padding: 26px 16px; font-size: 15px; }
 
-/* Court decorative lines */
-.court-lines {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.court-lines::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0; right: 0;
-  height: 2px;
-  background: rgba(255,255,255,0.12);
-  transform: translateY(-50%);
-}
-.court-lines::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 0; bottom: 0;
-  width: 2px;
-  background: rgba(255,255,255,0.12);
-  transform: translateX(-50%);
-}
-.court-circle {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120px; height: 120px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.1);
-}
+/* 課程卡 */
+.s-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 4px; }
+.s-date { font-size: 20px; font-weight: 700; }
+.s-time { color: var(--label-2); font-size: 14px; }
+.badge { margin-left: auto; font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 99px; white-space: nowrap; background: var(--fill); color: var(--label-2); }
+.badge.ok { background: rgba(52,199,89,.16); color: var(--green); }
+.badge.warn { background: rgba(255,149,0,.16); color: var(--orange); }
+.badge.bad { background: rgba(255,59,48,.14); color: var(--red); }
+.badge.rain { background: rgba(0,122,255,.14); color: var(--blue); }
+.lbl { font-size: 13px; color: var(--label-2); padding: 12px 16px 6px; }
+.chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 16px; }
+.chip { height: 46px; border-radius: 12px; background: var(--fill); color: var(--label-2); font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 4px; transition: background .15s, color .15s; }
+.chip.on { background: var(--court); color: #fff; }
+.chip.pay.on { background: var(--blue); }
+.chip:active { opacity: .7; }
+.sum { display: grid; grid-template-columns: repeat(3, 1fr); margin: 14px 16px 2px; background: var(--fill); border-radius: 12px; }
+.sum div { padding: 10px 4px; text-align: center; }
+.sum div + div { border-left: .5px solid var(--sep); }
+.sum b { display: block; font-size: 19px; font-weight: 700; }
+.sum span { font-size: 12px; color: var(--label-2); }
+.repay { margin-top: 4px; }
+.pill { min-width: 76px; height: 34px; padding: 0 14px; border-radius: 99px; font-size: 14px; font-weight: 600; background: rgba(255,59,48,.12); color: var(--red); }
+.pill.on { background: rgba(52,199,89,.16); color: var(--green); }
+.note { width: 100%; border: none; background: var(--fill); border-radius: 10px; padding: 10px 12px; font-size: 15px; outline: none; }
+.note::placeholder { color: var(--label-3); }
+.s-foot { display: flex; gap: 8px; padding: 12px 16px 14px; }
+.btn { height: 38px; padding: 0 14px; border-radius: 10px; background: var(--fill); font-size: 14px; font-weight: 600; color: var(--blue); }
+.btn.red { color: var(--red); }
+.btn.solid { background: var(--blue); color: #fff; }
+.btn.full { width: 100%; height: 48px; font-size: 16px; border-radius: 12px; }
+.hint { font-size: 13px; color: var(--label-2); padding: 2px 16px 0; }
+.rain-box { padding: 6px 16px 4px; color: var(--label-2); font-size: 15px; }
 
-.wimbledon-icon {
-  font-size: 2.2rem;
-  margin-bottom: 6px;
-  display: block;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
-}
+/* 課表列 */
+.s-row { width: 100%; text-align: left; display: flex; align-items: center; gap: 10px; padding: 12px 16px; position: relative; }
+.s-row + .s-row::before, .s-open + .s-row::before, .s-row + .s-open::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: var(--sep); }
+.s-row .d { font-weight: 600; width: 58px; flex: none; }
+.s-row .m { flex: 1; min-width: 0; font-size: 14px; color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s-row .chev { color: var(--label-3); font-size: 18px; transition: transform .2s; }
+.s-open { position: relative; background: var(--cell); }
+.s-open .s-row .chev { transform: rotate(90deg); }
+.s-open .inner { padding-bottom: 2px; }
+.month { font-size: 13px; color: var(--label-2); margin: 20px 16px 7px; }
 
-.header-title {
-  font-family: 'Playfair Display', serif;
-  color: var(--white);
-  font-size: 1.8rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  line-height: 1.2;
-}
-.header-title span { color: var(--gold); }
+/* 月曆 */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 2px 16px 12px; font-size: 13px; color: var(--label-2); }
+.legend span { display: flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 14px; border-radius: 5px; display: block; }
+.m-title { font-size: 20px; font-weight: 700; padding: 14px 16px 6px; }
+.m-title small { font-size: 13px; font-weight: 400; color: var(--label-2); margin-left: 8px; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 0 10px 12px; }
+.cal .wd { font-size: 11px; color: var(--label-2); text-align: center; padding: 4px 0 6px; }
+.day { aspect-ratio: 1; border-radius: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 15px; position: relative; color: var(--label-2); }
+.day small { font-size: 10px; line-height: 1; font-weight: 600; }
+.day.cls, .day.plan, .day.stop, .day.rain { font-weight: 700; }
+.day.cls, i.cls { background: var(--court); color: #fff; }
+.day.plan, i.plan { background: rgba(47,125,79,.18); color: var(--court); }
+.day.stop, i.stop { background: var(--fill-2); color: var(--label-2); }
+.day.rain, i.rain { background: var(--blue); color: #fff; }
+.day.today { box-shadow: inset 0 0 0 2px var(--label); }
+.day.sel { box-shadow: 0 0 0 3px var(--orange); }
+.day .due { position: absolute; top: 3px; right: 3px; width: 9px; height: 9px; border-radius: 50%; background: var(--red); border: 1.5px solid var(--cell); }
+.detail { border-top: .5px solid var(--sep); }
 
-.header-sub {
-  color: rgba(255,255,255,0.8);
-  font-size: 0.85rem;
-  margin-top: 6px;
-  letter-spacing: 0.08em;
-  font-style: italic;
-}
+/* 總表 */
+.settle { display: flex; align-items: center; gap: 10px; padding: 14px 16px; position: relative; }
+.settle + .settle::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: var(--sep); }
+.settle .who { flex: 1; min-width: 0; font-size: 17px; font-weight: 600; }
+.settle .who small { display: block; font-size: 12px; font-weight: 400; color: var(--label-2); margin-top: 2px; }
+.settle .amt { font-size: 20px; font-weight: 700; }
+.arrow { color: var(--label-3); margin: 0 4px; }
+.allclear { text-align: center; padding: 28px 16px; }
+.allclear b { display: block; font-size: 19px; margin-bottom: 4px; }
+.allclear span { color: var(--label-2); font-size: 14px; }
+table.tot { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.tot th, table.tot td { padding: 10px 6px; text-align: right; }
+table.tot th:first-child, table.tot td:first-child { text-align: left; padding-left: 16px; }
+table.tot th:last-child, table.tot td:last-child { padding-right: 16px; }
+table.tot th { font-size: 12px; font-weight: 500; color: var(--label-2); }
+table.tot tr + tr td { border-top: .5px solid var(--sep); }
+table.tot td.owe { color: var(--red); font-weight: 600; }
+table.tot td.get { color: var(--green); font-weight: 600; }
+.fee-head { display: flex; align-items: baseline; gap: 8px; padding: 14px 16px 2px; }
+.fee-head b { font-size: 17px; }
+.fee-head .t { margin-left: auto; font-size: 17px; font-weight: 700; }
 
-.header-divider {
-  height: 5px;
-  background: linear-gradient(90deg, var(--purple), var(--purple2), var(--gold), var(--purple2), var(--purple));
-}
+/* 分頁列 */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; height: calc(var(--tabbar-h) + var(--safe-b)); padding-bottom: var(--safe-b); background: var(--bar); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border-top: .5px solid var(--sep); display: flex; z-index: 20; }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 500; color: var(--gray); position: relative; }
+.tab svg { width: 25px; height: 25px; }
+.tab.on { color: var(--blue); }
+.tab .dot { position: absolute; top: 7px; left: calc(50% + 9px); min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px; background: var(--red); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 
-/* ── NET DECORATION ── */
-.net-bar {
-  background: var(--green2);
-  padding: 8px 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-}
-.net-pattern {
-  color: rgba(255,255,255,0.2);
-  font-size: 0.7rem;
-  letter-spacing: 2px;
-  font-family: monospace;
-  white-space: nowrap;
-}
-.net-center {
-  background: var(--cream2);
-  color: var(--green);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  padding: 3px 14px;
-  border-radius: 2px;
-  font-family: 'Playfair Display', serif;
-  white-space: nowrap;
-}
-
-/* ── CONTAINER ── */
-.container { max-width: 1200px; margin: 0 auto; padding: 24px 16px 40px; }
-.layout { display: flex; gap: 24px; align-items: flex-start; }
-.main-col { flex: 1; min-width: 0; }
-.side-col { width: 300px; flex-shrink: 0; }
-@media(max-width: 860px) { .layout { flex-direction: column; } .side-col { width: 100%; } }
-
-/* ── COURT FEE PANEL ── */
-.court-fee-panel {
-  background: var(--white);
-  border-radius: 4px;
-  border: 1.5px solid var(--cream2);
-  box-shadow: 0 3px 14px rgba(10,92,54,0.07);
-  overflow: hidden;
-  position: sticky;
-  top: 20px;
-}
-.court-fee-header {
-  background: linear-gradient(135deg, var(--purple) 0%, var(--purple2) 100%);
-  padding: 14px 16px;
-  color: var(--white);
-}
-.court-fee-header h3 {
-  font-family: 'Playfair Display', serif;
-  font-size: 0.95rem;
-  letter-spacing: 0.1em;
-  margin: 0 0 2px;
-}
-.court-fee-header p {
-  font-size: 0.72rem;
-  opacity: 0.75;
-  margin: 0;
-  letter-spacing: 0.05em;
-}
-.court-fee-stripe {
-  height: 4px;
-  background: linear-gradient(90deg, var(--gold), var(--purple2), var(--gold));
-}
-.court-fee-body { padding: 14px; }
-.court-fee-add {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--cream2);
-}
-.court-fee-add label {
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--purple);
-  font-family: 'Playfair Display', serif;
-}
-.court-fee-add input {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1.5px solid var(--cream2);
-  border-radius: 3px;
-  padding: 7px 10px;
-  font-family: 'EB Garamond', serif;
-  font-size: 0.9rem;
-  background: var(--cream);
-  color: var(--text);
-}
-.court-fee-add input:focus { outline: none; border-color: var(--purple); }
-.btn-add-fee {
-  background: var(--purple);
-  color: var(--white);
-  border: none;
-  border-radius: 3px;
-  padding: 8px;
-  font-family: 'Playfair Display', serif;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-add-fee:hover { background: var(--purple2); }
-.fee-record {
-  background: var(--cream);
-  border-radius: 3px;
-  border: 1px solid var(--cream2);
-  margin-bottom: 10px;
-  overflow: hidden;
-}
-.fee-record-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 9px 11px 7px;
-  border-bottom: 1px solid var(--cream2);
-}
-.fee-record-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 0.82rem;
-  color: var(--purple);
-  font-weight: 700;
-}
-.fee-record-meta { font-size: 0.72rem; color: var(--muted); }
-.fee-record-del {
-  background: none;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 0.8rem;
-  padding: 2px 5px;
-  border-radius: 2px;
-}
-.fee-record-del:hover { color: #c0392b; background: rgba(220,53,69,0.08); }
-.fee-player-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 0 12px;
-  padding: 7px 11px;
-  border-bottom: 1px solid rgba(0,0,0,0.04);
-}
-.fee-player-row:last-child { border-bottom: none; }
-.fee-player-name { font-size: 0.82rem; font-weight: 700; color: var(--text); letter-spacing: 0.03em; }
-.fee-player-amt { font-size: 0.82rem; color: var(--text); text-align: right; font-weight: 500; }
-.fee-player-check {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.78rem;
-  cursor: pointer;
-  min-width: 52px;
-  justify-content: flex-end;
-}
-.fee-player-check input { cursor: pointer; accent-color: var(--purple); width: 15px; height: 15px; }
-.fee-paid-label { color: var(--green); font-weight: 600; }
-.fee-unpaid-label { color: var(--muted); }
-.fee-record-summary {
-  display: flex;
-  justify-content: space-between;
-  padding: 7px 11px;
-  background: rgba(91,45,142,0.06);
-  font-size: 0.75rem;
-  color: var(--purple);
-  font-family: 'Playfair Display', serif;
-}
-.fee-empty { font-size: 0.8rem; color: var(--muted); text-align: center; padding: 16px 0; font-style: italic; }
-
-/* ── SUMMARY ── */
-.summary-label {
-  font-family: 'Playfair Display', serif;
-  font-size: 0.75rem;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--purple);
-  margin-bottom: 12px;
-  text-align: center;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 28px;
-}
-@media(min-width: 600px) { .summary-grid { grid-template-columns: repeat(4, 1fr); } }
-
-.summary-card {
-  background: var(--white);
-  border-radius: 4px;
-  padding: 18px 14px;
-  text-align: center;
-  border: 1.5px solid var(--cream2);
-  border-top: 4px solid var(--purple);
-  box-shadow: 0 2px 12px rgba(91,45,142,0.08);
-  position: relative;
-  overflow: hidden;
-}
-.summary-card::before {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--green), var(--green2));
-}
-.summary-card .player-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--green);
-  letter-spacing: 0.05em;
-}
-.summary-card .stat {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin-top: 6px;
-  font-style: italic;
-}
-.summary-card .amount {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--purple);
-  margin-top: 8px;
-}
-.summary-card .amount.cleared { color: var(--green2); }
-.summary-card .paid-tag {
-  display: inline-block;
-  margin-top: 6px;
-  padding: 2px 10px;
-  border-radius: 2px;
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  font-family: 'Playfair Display', serif;
-}
-.summary-card .paid-tag.ok { background: #E8F5EE; color: var(--green); border: 1px solid #B8DEC9; }
-.summary-card .paid-tag.due { background: #F3EDF8; color: var(--purple); border: 1px solid #D4B8E8; }
-
-/* ── SECTION HEADER ── */
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--green);
-}
-.section-header h2 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--green);
-  letter-spacing: 0.05em;
-}
-.section-header h2 em {
-  color: var(--purple);
-  font-style: normal;
-  font-size: 0.8rem;
-  margin-left: 8px;
-}
-
-.btn-add {
-  background: var(--purple);
-  color: var(--white);
-  border: none;
-  border-radius: 3px;
-  padding: 8px 18px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  letter-spacing: 0.08em;
-  font-family: 'Playfair Display', serif;
-  transition: background 0.2s, transform 0.1s;
-  box-shadow: 0 2px 8px rgba(91,45,142,0.25);
-}
-.btn-add:hover { background: var(--green); transform: translateY(-1px); }
-
-/* ── SESSION CARD ── */
-.session-card {
-  background: var(--white);
-  border-radius: 4px;
-  border: 1.5px solid var(--cream2);
-  margin-bottom: 18px;
-  overflow: hidden;
-  box-shadow: 0 3px 14px rgba(10,92,54,0.07);
-}
-
-.session-header {
-  background: linear-gradient(135deg, var(--green) 0%, var(--green2) 60%, var(--green3) 100%);
-  padding: 14px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  position: relative;
-  overflow: hidden;
-}
-.session-header::after {
-  content: '⬤';
-  position: absolute;
-  right: -20px;
-  bottom: -30px;
-  font-size: 100px;
-  color: rgba(255,255,255,0.04);
-  pointer-events: none;
-}
-.session-date-wrap {}
-.session-date {
-  font-family: 'Playfair Display', serif;
-  color: var(--white);
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-}
-.session-date .today-dot {
-  display: inline-block;
-  width: 8px; height: 8px;
-  background: var(--gold);
-  border-radius: 50%;
-  margin-right: 6px;
-  animation: pulse 1.4s infinite;
-}
-@keyframes pulse {
-  0%,100% { opacity:1; transform:scale(1); }
-  50% { opacity:0.6; transform:scale(1.3); }
-}
-.session-time {
-  color: rgba(255,255,255,0.75);
-  font-size: 0.78rem;
-  margin-top: 2px;
-  font-style: italic;
-}
-.session-meta { display: flex; gap: 10px; align-items: center; }
-.fee-badge {
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: var(--white);
-  border-radius: 3px;
-  padding: 4px 12px;
-  font-size: 0.78rem;
-  font-family: 'Playfair Display', serif;
-  letter-spacing: 0.05em;
-}
-.delete-btn {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.7);
-  border-radius: 3px;
-  padding: 4px 9px;
-  cursor: pointer;
-  font-size: 0.78rem;
-  transition: all 0.2s;
-}
-.delete-btn:hover { background: rgba(220,53,69,0.4); color: white; border-color: transparent; }
-
-/* ── COLLAPSE ── */
-.session-card.collapsed { opacity: 0.72; }
-.session-header.collapsible:hover { filter: brightness(1.12); }
-.collapse-arrow { color: rgba(255,255,255,0.8); font-size: 0.9rem; transition: transform 0.25s; display:inline-block; }
-.collapse-arrow.open { transform: rotate(90deg); }
-.collapse-summary { font-size: 0.75rem; margin-right: 8px; }
-
-/* ── RAINOUT ── */
-.session-card.rainout { opacity: 0.7; }
-.session-card.rainout .session-header {
-  background: linear-gradient(135deg, var(--rain) 0%, var(--rain2) 100%) !important;
-}
-.session-card.rainout .session-stripe {
-  background: linear-gradient(90deg, #4A6FA5, #8aafd4, #c8daf0, #8aafd4, #4A6FA5);
-}
-.rainout-banner {
-  text-align: center;
-  padding: 20px 0 12px;
-  font-size: 2rem;
-  letter-spacing: 0.05em;
-}
-.rainout-banner span {
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem;
-  color: var(--rain);
-  display: block;
-  margin-top: 4px;
-  letter-spacing: 0.12em;
-}
-.rainout-badge {
-  background: rgba(74,111,165,0.15);
-  color: var(--rain);
-  border: 1px solid rgba(74,111,165,0.3);
-  border-radius: 3px;
-  padding: 2px 10px;
-  font-size: 0.78rem;
-  font-family: 'Playfair Display', serif;
-  letter-spacing: 0.05em;
-}
-.btn-rainout {
-  background: rgba(74,111,165,0.12);
-  border: 1.5px solid rgba(74,111,165,0.4);
-  color: var(--rain);
-  border-radius: 4px;
-  padding: 7px 18px;
-  font-size: 0.82rem;
-  font-family: 'Playfair Display', serif;
-  cursor: pointer;
-  transition: all 0.2s;
-  letter-spacing: 0.05em;
-}
-.btn-rainout:hover { background: rgba(74,111,165,0.25); }
-.btn-rainout.active {
-  background: var(--rain);
-  color: white;
-  border-color: var(--rain);
-}
-.btn-rainout.active:hover { background: var(--rain2); }
-
-/* Purple stripe accent */
-.session-stripe {
-  height: 4px;
-  background: linear-gradient(90deg, var(--purple), var(--purple2), var(--gold), var(--purple2), var(--purple));
-}
-
-.session-body { padding: 18px; }
-
-/* ── STUDENTS GRID ── */
-.students-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-@media(min-width: 520px) { .students-grid { grid-template-columns: repeat(4, 1fr); } }
-
-.student-card {
-  border: 1.5px solid var(--cream2);
-  border-radius: 4px;
-  padding: 14px 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  background: var(--cream);
-  transition: all 0.2s;
-}
-.student-card.attending {
-  border-color: var(--green2);
-  background: #F0FBF4;
-}
-.student-card.absent {
-  border-color: #CDB8DF;
-  background: #FAF4FF;
-  opacity: 0.75;
-}
-
-.player-initial {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: var(--green);
-  color: var(--white);
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem;
-  font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  letter-spacing: 0;
-  flex-shrink: 0;
-}
-.student-card.absent .player-initial { background: var(--purple); }
-
-.student-name-card {
-  font-family: 'Playfair Display', serif;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: 0.05em;
-}
-
-/* Toggle */
-.toggle-group {
-  display: flex;
-  border: 1.5px solid #CDD6DF;
-  border-radius: 3px;
-  overflow: hidden;
-  width: 100%;
-}
-.toggle-btn {
-  flex: 1;
-  padding: 5px 0;
-  font-size: 0.7rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  background: #F7F9FB;
-  color: var(--muted);
-  transition: all 0.15s;
-  font-family: 'Noto Serif TC', serif;
-  letter-spacing: 0.05em;
-}
-.toggle-btn:first-child { border-right: 1px solid #CDD6DF; }
-.toggle-btn.active-attend { background: var(--green); color: white; border-color: transparent; }
-.toggle-btn.active-absent { background: var(--purple); color: white; border-color: transparent; }
-
-/* Payment */
-.payment-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-}
-.payment-label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.72rem;
-  color: var(--muted);
-  cursor: pointer;
-  font-style: italic;
-  user-select: none;
-  font-family: 'EB Garamond', serif;
-}
-.payment-label input[type="checkbox"] {
-  accent-color: var(--green);
-  width: 13px; height: 13px;
-  cursor: pointer;
-}
-.payment-label.paid { color: var(--green); font-weight: 600; font-style: normal; }
-.per-cost {
-  font-size: 0.75rem;
-  color: var(--muted);
-  font-family: 'Playfair Display', serif;
-}
-.per-cost.owed { color: var(--purple); font-weight: 700; }
-.per-cost.paid-cost { color: var(--green2); font-weight: 600; }
-
-/* Note */
-.session-note {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--cream2);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.note-label {
-  font-size: 0.75rem;
-  color: var(--muted);
-  font-style: italic;
-  white-space: nowrap;
-}
-.note-input {
-  flex: 1;
-  border: 1px solid var(--cream2);
-  border-radius: 3px;
-  padding: 6px 10px;
-  font-size: 0.8rem;
-  color: var(--text);
-  background: var(--cream);
-  font-family: 'EB Garamond', serif;
-}
-.note-input:focus { outline: none; border-color: var(--green); background: white; }
-
-/* Past toggle */
-.past-toggle { text-align: center; margin: 4px 0 20px; }
-.past-toggle button {
-  background: none;
-  border: 1.5px solid #CDB8DF;
-  color: var(--purple);
-  border-radius: 3px;
-  padding: 7px 20px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  font-family: 'Playfair Display', serif;
-  letter-spacing: 0.05em;
-  transition: all 0.2s;
-}
-.past-toggle button:hover { background: var(--purple); color: white; }
-
-/* Empty */
-.empty-state {
-  text-align: center;
-  color: var(--muted);
-  padding: 50px 0;
-  font-size: 0.9rem;
-  font-style: italic;
-}
-
-/* ── MODAL ── */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(10,30,18,0.65);
-  z-index: 100;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(3px);
-}
-.modal-overlay.open { display: flex; }
-
-.modal {
-  background: var(--white);
-  border-radius: 4px;
-  padding: 0;
-  width: 92%;
-  max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-  overflow: hidden;
-}
-.modal-header {
-  background: var(--green);
-  padding: 16px 22px;
-  font-family: 'Playfair Display', serif;
-  color: white;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-}
-.modal-header-stripe {
-  height: 4px;
-  background: linear-gradient(90deg, var(--purple), var(--gold), var(--purple));
-}
-.modal-body { padding: 22px 22px 20px; }
-
-.form-group { margin-bottom: 16px; }
-.form-group label {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--green);
-  margin-bottom: 6px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  font-family: 'Playfair Display', serif;
-}
-.form-group input {
-  width: 100%;
-  border: 1.5px solid var(--cream2);
-  border-radius: 3px;
-  padding: 9px 12px;
-  font-size: 0.9rem;
-  color: var(--text);
-  background: var(--cream);
-  font-family: 'EB Garamond', serif;
-  transition: border-color 0.2s;
-}
-.form-group input:focus { outline: none; border-color: var(--green); background: white; }
-
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 20px;
-}
-.btn-cancel {
-  background: var(--cream2);
-  color: var(--muted);
-  border: none;
-  border-radius: 3px;
-  padding: 9px 18px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'Playfair Display', serif;
-}
-.btn-confirm {
-  background: var(--purple);
-  color: white;
-  border: none;
-  border-radius: 3px;
-  padding: 9px 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'Playfair Display', serif;
-  letter-spacing: 0.05em;
-  box-shadow: 0 2px 8px rgba(91,45,142,0.3);
-  transition: background 0.2s;
-}
-.btn-confirm:hover { background: var(--green); }
-
-/* Footer */
-footer {
-  text-align: center;
-  padding: 16px;
-  color: var(--muted);
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-family: 'Playfair Display', serif;
-  border-top: 1px solid var(--cream2);
-  margin-top: 10px;
-}
-.wimbledon-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--white);
-  border: 1.5px solid var(--cream2);
-  border-radius: 3px;
-  padding: 4px 14px;
-  font-size: 0.7rem;
-  color: var(--green);
-  font-family: 'Playfair Display', serif;
-  letter-spacing: 0.12em;
-  margin-bottom: 6px;
-}
-.stripe-mini {
-  display: inline-block;
-  width: 40px; height: 4px;
-  background: linear-gradient(90deg, var(--green), var(--purple), var(--gold));
-  border-radius: 2px;
-}
+/* 底部表單 */
+.sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 40; display: none; align-items: flex-end; justify-content: center; }
+.sheet-bg.open { display: flex; }
+.sheet { width: 100%; max-width: 560px; background: var(--bg); border-radius: 16px 16px 0 0; padding: 8px 16px calc(var(--safe-b) + 18px); max-height: 92vh; overflow: auto; }
+.sheet-top { display: flex; align-items: center; justify-content: space-between; height: 48px; }
+.sheet-top b { font-size: 17px; }
+.sheet-top button { color: var(--blue); font-size: 17px; }
+.field { display: flex; align-items: center; gap: 12px; padding: 0 16px; min-height: 48px; position: relative; }
+.field + .field::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: var(--sep); }
+.field label { width: 76px; flex: none; font-size: 16px; }
+.msg { width: 100%; min-height: 220px; border: none; outline: none; resize: vertical; background: var(--cell); border-radius: 14px; padding: 14px 16px; font: inherit; font-size: 15px; line-height: 1.5; color: var(--label); margin-bottom: 12px; }
+.btn.line { background: #06c755; color: #fff; }
+.field input { flex: 1; min-width: 0; border: none; background: none; outline: none; text-align: right; font-size: 16px; height: 46px; }
+.toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + var(--safe-b) + 16px); transform: translateX(-50%); background: rgba(30,30,32,.92); color: #fff; font-size: 14px; padding: 10px 16px; border-radius: 99px; z-index: 60; opacity: 0; pointer-events: none; transition: opacity .25s; white-space: nowrap; }
+.toast.show { opacity: 1; }
 </style>
 </head>
 <body>
-
-<header>
-  <div class="header-top">
-    <span>Friday Evening · 19:00 — 21:00</span>
-    <span style="display:flex;align-items:center;gap:6px;">
-      <span id="liveDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#aaa;transition:background 0.4s;"></span>
-      <span id="liveLabel" style="font-size:0.68rem;letter-spacing:0.12em;opacity:0.85;">Connecting…</span>
-    </span>
-  </div>
-  <div class="header-main">
-    <div class="court-lines"><div class="court-circle"></div></div>
-    <span class="wimbledon-icon">🎾</span>
-    <div class="header-title">Tennis <span>Court</span></div>
-    <div class="header-sub">Course Schedule & Payment Tracker</div>
-  </div>
-  <div class="header-divider"></div>
-  <div class="net-bar">
-    <div class="net-pattern">╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫</div>
-    <div class="net-center">THE NET</div>
-    <div class="net-pattern">╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫╫</div>
-  </div>
-</header>
-
-<div class="container">
-
-  <div class="summary-label">Player Standing</div>
-  <div id="summaryGrid" class="summary-grid"></div>
-
-  <div class="layout">
-    <div class="main-col">
-      <div class="section-header">
-        <h2>Match Schedule <em id="sessionCount"></em></h2>
-        <button class="btn-add" onclick="openModal()">＋ 新增課程</button>
-      </div>
-      <div id="sessionList"></div>
-      <div class="past-toggle">
-        <button id="pastToggleBtn" onclick="togglePast()">顯示過去課程</button>
-      </div>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>週五網球課</h1>
+      <div class="sub">青年公園 · 每週五 19:00–21:00</div>
     </div>
-
-    <div class="side-col">
-      <div class="court-fee-panel">
-        <div class="court-fee-header">
-          <h3>🏟 Court Fee · 場地費</h3>
-          <p>每季繳費紀錄 · 四人平分</p>
-        </div>
-        <div class="court-fee-stripe"></div>
-        <div class="court-fee-body">
-          <div class="court-fee-add">
-            <label>季別名稱</label>
-            <input type="text" id="feeLabel" placeholder="例：2026 Q2（4月–6月）">
-            <label>小時數（每小時 $800）</label>
-            <input type="number" id="feeHours" placeholder="例：24" min="1" oninput="updateFeePreview()">
-            <div id="feePreview" style="font-size:0.78rem;color:var(--purple);min-height:1.2em;padding:2px 0;"></div>
-            <button class="btn-add-fee" onclick="addFeeRecord()">＋ 新增紀錄</button>
-          </div>
-          <div id="feeList"></div>
-        </div>
-      </div>
-    </div>
+    <div class="live" id="live"><i></i><span id="liveLabel">連線中</span></div>
   </div>
-
+  <div id="demoBar"></div>
+  <div id="app"><div class="empty">載入中…</div></div>
 </div>
 
-<footer>
-  <div>
-    <div class="wimbledon-badge"><span class="stripe-mini"></span>Tennis Court · 網球課程管理<span class="stripe-mini"></span></div>
-    <div>All England · Lawn Tennis · Club</div>
-  </div>
-</footer>
+<nav class="tabbar" id="tabbar"></nav>
 
-<!-- Modal -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-header">📅 新增課程日期</div>
-    <div class="modal-header-stripe"></div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Date 日期</label>
-        <input type="date" id="newDate">
-      </div>
-      <div class="form-group">
-        <label>Time 時間</label>
-        <input type="text" id="newTime" value="19:00–21:00">
-      </div>
-      <div class="form-group">
-        <label>Note 備註</label>
-        <input type="text" id="newNote" placeholder="加課、補課、場地變更…">
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal()">取消</button>
-        <button class="btn-confirm" onclick="addSession()">確認新增</button>
-      </div>
-    </div>
-  </div>
-</div>
+<div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
 
-<!-- Firebase SDK -->
+<script id="core">
+/* ── 純計算邏輯（無 DOM、無 Firebase），由 tennis-schedule.test.cjs 測試 ── */
+(function (root) {
+  const PEOPLE = ['JENNY', 'NOMO', 'WILL', 'EVEN'];
+  const LABEL = { JENNY: 'Jenny', NOMO: 'Nomo', WILL: 'Will', EVEN: 'Even' };
+  const COACH_FEE = { 0: 0, 1: 3400, 2: 3400, 3: 3400, 4: 4200 };
+  const COURT_RATE = 800;           // 場地費：每小時
+  const HOURS_PER_CLASS = 2;        // 每堂課用掉的場地時數
+  const SUMMARY_FROM = '2026-11-12'; // 每人小計從這天開始算
+  const DEFAULT_TIME = '19:00–21:00';
+
+  const pad = n => String(n).padStart(2, '0');
+  function dateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parseDate(s) { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function addDays(s, n) { const d = parseDate(s); d.setDate(d.getDate() + n); return dateStr(d); }
+  function isPerson(n) { return PEOPLE.indexOf(n) !== -1; }
+
+  // 停課種類：'rain' 雨天、'stop' 其他原因停課、'' 正常
+  function offKind(s) { return s && s.rainout ? (s.offType === 'stop' ? 'stop' : 'rain') : ''; }
+
+  // 這堂課打幾小時（沒設定就是 2 小時）
+  function sessionHours(s) { const n = Number(s && s.hours); return n > 0 ? n : HOURS_PER_CLASS; }
+
+  function attendees(s) {
+    const st = (s && s.students) || {};
+    return PEOPLE.filter(n => st[n] && st[n].attend);
+  }
+
+  // 一堂課的教練費：誰上課、總額、每人分攤、誰還欠代墊人
+  function sessionCalc(s) {
+    const att = attendees(s);
+    const count = att.length;
+    const total = s.rainout ? 0 : (COACH_FEE[count] || 0);
+    const share = count ? Math.round(total / count) : 0;
+    const payer = isPerson(s.payer) ? s.payer : '';
+    let status, unpaid = [], debts = [];
+    if (s.rainout) status = 'rainout';
+    else if (!count) status = 'empty';
+    else if (payer) {
+      unpaid = att.filter(n => n !== payer && !(s.students[n] && s.students[n].paid));
+      debts = unpaid.map(n => ({ from: n, to: payer, amt: share, kind: 'coach', id: s.id }));
+      status = unpaid.length ? 'open' : 'settled';
+    } else status = s.settled ? 'settled' : 'needPayer';
+    return { attendees: att, count, total, share, payer, unpaid, debts, status, off: offKind(s) };
+  }
+
+  // 一季場地費：四人平分，不看出席
+  function feeCalc(f) {
+    const hours = Number(f.hours) || 0;
+    const rate = Number(f.rate) || COURT_RATE;
+    const total = hours * rate;
+    const share = Math.round(total / PEOPLE.length);
+    const payer = isPerson(f.payer) ? f.payer : '';
+    const paid = f.paid || {};
+    let status, unpaid = [], debts = [];
+    if (!payer) status = 'needPayer';
+    else {
+      unpaid = PEOPLE.filter(n => n !== payer && !paid[n]);
+      debts = unpaid.map(n => ({ from: n, to: payer, amt: share, kind: 'court', id: f.id }));
+      status = unpaid.length ? 'open' : 'settled';
+    }
+    return { hours, rate, total, share, payer, unpaid, debts, status };
+  }
+
+  function allDebts(sessions, fees) {
+    let out = [];
+    (sessions || []).forEach(s => { out = out.concat(sessionCalc(s).debts); });
+    (fees || []).forEach(f => { out = out.concat(feeCalc(f).debts); });
+    return out;
+  }
+
+  // 兩兩互抵：同一對人之間的欠款相減，只留淨額
+  function pairNet(debts) {
+    const map = {};
+    debts.forEach(d => {
+      const a = PEOPLE.indexOf(d.from) < PEOPLE.indexOf(d.to) ? d.from : d.to;
+      const b = a === d.from ? d.to : d.from;
+      const k = a + '|' + b;
+      if (!map[k]) map[k] = { a, b, net: 0, items: [] };
+      map[k].net += d.from === a ? d.amt : -d.amt;   // 正數＝a 欠 b
+      map[k].items.push(d);
+    });
+    return Object.keys(map).map(k => {
+      const p = map[k];
+      return p.net >= 0
+        ? { from: p.a, to: p.b, amt: p.net, items: p.items }
+        : { from: p.b, to: p.a, amt: -p.net, items: p.items };
+    }).sort((x, y) => y.amt - x.amt);
+  }
+
+  // 每人小計（只算今天以前、已發生的課）
+  function personSummary(sessions, fees, today, from) {
+    const sum = {};
+    PEOPLE.forEach(n => { sum[n] = { classes: 0, coach: 0, court: 0, advanced: 0, owes: 0, owed: 0 }; });
+    (sessions || []).forEach(s => {
+      if (s.date > today || (from && s.date < from)) return;
+      const c = sessionCalc(s);
+      if (c.status === 'rainout' || c.status === 'empty') return;
+      c.attendees.forEach(n => { sum[n].classes++; sum[n].coach += c.share; });
+      if (c.payer) sum[c.payer].advanced += c.total;
+    });
+    (fees || []).forEach(f => {
+      const c = feeCalc(f);
+      PEOPLE.forEach(n => { sum[n].court += c.share; });
+      if (c.payer) sum[c.payer].advanced += c.total;
+    });
+    allDebts(sessions, fees).forEach(d => { sum[d.from].owes += d.amt; sum[d.to].owed += d.amt; });
+    return sum;
+  }
+
+  // 本週要顯示哪一堂：週五當天到下週一顯示剛上完的那堂，其餘顯示下一堂
+  function focusSession(sessions, today) {
+    const list = (sessions || []).slice().sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    const from = addDays(today, -3);
+    const recent = list.filter(s => s.date <= today && s.date >= from).pop();
+    if (recent) return recent;
+    return list.find(s => s.date >= today) || list[list.length - 1] || null;
+  }
+
+  // 課表往後自動補週五：只補「晚於目前最後一堂」的日期，中間刪掉的不會長回來
+  function missingFridays(sessions, today, horizonDays) {
+    const dates = (sessions || []).map(s => s.date).sort();
+    const last = dates.length ? dates[dates.length - 1] : addDays(today, -1);
+    const limit = addDays(today, horizonDays);
+    const out = [];
+    let d = last > today ? last : addDays(today, -1);
+    for (let i = 0; i < 400; i++) {
+      d = addDays(d, 1);
+      if (d > limit) break;
+      if (parseDate(d).getDay() === 5 && d > last) out.push(d);
+    }
+    return out;
+  }
+
+  function makeSession(date, id) {
+    const students = {};
+    PEOPLE.forEach(n => { students[n] = { attend: true, paid: false }; });
+    return { id: id || date + '_fri', date, time: DEFAULT_TIME, note: '', payer: '', students };
+  }
+
+  // 催款訊息（貼到 LINE 群組用）
+  function fmtMoney(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+  function md(ds) { const d = parseDate(ds); return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function reminderText(sessions, fees, today, url) {
+    const pairs = pairNet(allDebts(sessions, fees)).filter(p => p.amt > 0);
+    if (!pairs.length) return '';
+    const sById = {}, fById = {};
+    (sessions || []).forEach(s => { sById[s.id] = s; });
+    (fees || []).forEach(f => { fById[f.id] = f; });
+    const lines = ['🎾 週五網球課｜還款提醒（' + md(today) + '）'];
+    pairs.forEach(p => {
+      lines.push('', LABEL[p.from] + ' → ' + LABEL[p.to] + '　' + fmtMoney(p.amt));
+      p.items.forEach(x => {
+        const what = (x.kind === 'coach'
+          ? (sById[x.id] ? md(sById[x.id].date) + ' ' : '') + '教練費'
+          : ((fById[x.id] && fById[x.id].label) || '') + ' 場地費').trim();
+        lines.push(x.from === p.from ? '・' + what + ' ' + fmtMoney(x.amt) : '・' + what + ' −' + fmtMoney(x.amt) + '（互抵）');
+      });
+    });
+    lines.push('', '轉帳後麻煩到這裡按「已還」，謝謝 🙏');
+    if (url) lines.push(url);
+    return lines.join('\n');
+  }
+
+  // 場地剩餘時數：手動輸入「現在還剩幾小時」，之後每上一堂課自動扣 HOURS_PER_CLASS 小時
+  // （雨天、停課、沒人上課不扣；輸入當下已經打完的課不會重複扣）
+  function endMs(s) { const e = parseDate(s.date); e.setHours(21, 0, 0, 0); return e.getTime(); }
+  function isHeld(s) { return ['open', 'settled', 'needPayer'].indexOf(sessionCalc(s).status) !== -1; }
+  function courtBalance(sessions, court, nowMs) {
+    if (!court || court.hours == null || court.hours === '' || isNaN(Number(court.hours))) return null;
+    const base = Number(court.hours), setAt = Number(court.setAt) || 0;
+    const list = (sessions || []).filter(s => { const e = endMs(s); return e > setAt && e <= nowMs && isHeld(s); });
+    const used = list.reduce((a, s) => a + sessionHours(s), 0), left = base - used;
+    return { base, setAt, held: list.length, used, left, classesLeft: Math.max(0, Math.floor(left / HOURS_PER_CLASS)) };
+  }
+
+  // 新增一季場地費時自動換算剩餘時數：
+  // 已經有剩餘時數 → 直接加上新買的（之前上的課本來就扣過了）
+  // 還沒輸入過     → 新買的時數，扣掉起算日之後已經上過的課
+  function seasonTopUp(sessions, court, hours, start, nowMs) {
+    const bal = courtBalance(sessions, court, nowMs);
+    let before, deducted = 0, classes = 0;
+    if (bal) before = bal.left;
+    else {
+      before = 0;
+      (sessions || []).forEach(s => {
+        if (s.date >= start && endMs(s) <= nowMs && isHeld(s)) { deducted += sessionHours(s); classes++; }
+      });
+    }
+    return { hours: before + Number(hours) - deducted, setAt: nowMs, before, deducted, classes, hadBalance: !!bal };
+  }
+
+  const api = { PEOPLE, LABEL, COACH_FEE, COURT_RATE, DEFAULT_TIME, dateStr, parseDate, addDays, attendees,
+    HOURS_PER_CLASS, SUMMARY_FROM, sessionHours, seasonTopUp, courtBalance, offKind, sessionCalc, feeCalc, allDebts, reminderText, pairNet, personSummary, focusSession, missingFridays, makeSession };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.TennisCore = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
-// ── 請把下方換成你的 Firebase 專案設定 ──────────────────────────
+const C = window.TennisCore;
+const { PEOPLE, LABEL } = C;
+const DB_URL = 'https://tennis-court-nomo-default-rtdb.asia-southeast1.firebasedatabase.app';
 const firebaseConfig = {
   apiKey:            "AIzaSyB0nqFFS6-MIuWAM0XDnURRnxg57JZF5Sc",
   authDomain:        "tennis-court-nomo.firebaseapp.com",
-  databaseURL:       "https://tennis-court-nomo-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL:       DB_URL,
   projectId:         "tennis-court-nomo",
   storageBucket:     "tennis-court-nomo.firebasestorage.app",
   messagingSenderId: "761622662336",
   appId:             "1:761622662336:web:71f581dbaddf56b9287125"
 };
-// ────────────────────────────────────────────────────────────────
+// 預覽模式：本機開啟（localhost / file）一律不寫入正式資料，除非網址加 #live；線上版加 ?demo 或 #demo 也可進預覽
+const IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname);
+const DEMO = new URLSearchParams(location.search).has('demo') || location.hash.includes('demo') || (IS_LOCAL && !location.hash.includes('live'));
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const sessionsRef = db.ref('tennis/sessions');
-const feeRef = db.ref('tennis/courtFees');
+/* ── 狀態 ── */
+const state = { sessions: {}, fees: {}, court: null, ready: false };
+const ui = { tab: 'week', open: null };
+let pendingRender = false;
 
-const STUDENTS = ['NOMO','JENNY','WILL','EVEN'];
-const PRICES = { 1:3400, 2:3400, 3:3400, 4:4200 };
+const today = () => C.dateStr(new Date());
+const money = n => '$' + Math.round(n).toLocaleString('en-US');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sessionList = () => Object.values(state.sessions).filter(s => s && s.date && s.id).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+const feeList = () => Object.values(state.fees).filter(f => f && f.id).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+function shortDate(ds) { const d = C.parseDate(ds); return (d.getMonth() + 1) + '/' + d.getDate(); }
+function longDate(ds) { const d = C.parseDate(ds); return (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日 週' + '日一二三四五六'[d.getDay()]; }
 
-let showPast = false;
-let data = { sessions: [] };
-let feeData = [];
-let dbReady = false;
-
-// ── 連線狀態指示器 ──
-const connRef = db.ref('.info/connected');
-connRef.on('value', snap => {
-  const dot = document.getElementById('liveDot');
-  const lbl = document.getElementById('liveLabel');
-  if (!dot) return;
-  if (snap.val()) {
-    dot.style.background = '#52b788';
-    lbl.textContent = 'Live';
-  } else {
-    dot.style.background = '#e53e3e';
-    lbl.textContent = 'Offline';
-  }
-});
-
-// ── 即時監聽 Firebase ──
-sessionsRef.on('value', snapshot => {
-  const val = snapshot.val();
-  if (val) {
-    data.sessions = Object.values(val);
-  } else if (!dbReady) {
-    data.sessions = getFridaysUntilYearEnd().map(d => makeSession(d,'19:00–21:00',''));
-    save();
-  }
-  dbReady = true;
-  render();
-});
-
-feeRef.on('value', snapshot => {
-  const val = snapshot.val();
-  feeData = val ? Object.values(val) : [];
-  renderFees();
-});
-
-function getFridaysUntilYearEnd() {
-  const result = [];
-  const today = new Date(); today.setHours(0,0,0,0);
-  const yearEnd = new Date(today.getFullYear(), 11, 31);
-  const d = new Date(today);
-  const diff = (5 - d.getDay() + 7) % 7;
-  d.setDate(d.getDate() + (diff === 0 ? 0 : diff) - 7);
-  while (d <= yearEnd) {
-    d.setDate(d.getDate() + 7);
-    if (d >= today && d <= yearEnd) {
-      // 用本地時間避免 UTC 轉換造成日期偏移
-      const y = d.getFullYear();
-      const m = String(d.getMonth()+1).padStart(2,'0');
-      const day = String(d.getDate()).padStart(2,'0');
-      result.push(`${y}-${m}-${day}`);
+/* ── 儲存層：正式＝Firebase；?demo＝只讀一次線上資料，改動只留在這個分頁 ── */
+const store = {
+  // updates: { 'sessions/<id>/payer': 'NOMO', ... }，值為 null 代表刪除
+  write(updates) {
+    if (DEMO) {
+      Object.keys(updates).forEach(path => {
+        const keys = path.split('/');
+        const root = { sessions: 'sessions', courtFees: 'fees', court: 'court' }[keys.shift()];
+        if (!keys.length) { state[root] = updates[path]; return; }
+        let o = state[root];
+        while (keys.length > 1) { const k = keys.shift(); if (typeof o[k] !== 'object' || !o[k]) o[k] = {}; o = o[k]; }
+        if (updates[path] === null) delete o[keys[0]]; else o[keys[0]] = updates[path];
+      });
+      render();
+      return Promise.resolve();
     }
-  }
-  return result;
-}
-
-function makeSession(date, time, note) {
-  return {
-    id: date+'_'+Math.random().toString(36).slice(2,7),
-    date, time: time||'19:00–21:00', note: note||'',
-    students: Object.fromEntries(STUDENTS.map(s=>[s,{attend:true,paid:false}]))
-  };
-}
-
-function save() {
-  const obj = {};
-  data.sessions.forEach(s => { obj[s.id] = s; });
-  sessionsRef.set(obj);
-}
-
-function getCount(s) { return STUDENTS.filter(n=>s.students[n].attend).length; }
-function getTotal(s) { const n=getCount(s); return PRICES[n]||0; }
-function getPerPerson(s) { const n=getCount(s); return n?Math.round(getTotal(s)/n):0; }
-function localDateStr() { const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
-function isPast(d) { return d < localDateStr(); }
-function isToday(d) { return d === localDateStr(); }
-
-function formatDate(ds) {
-  const d = new Date(ds+'T00:00:00');
-  const days=['日','一','二','三','四','五','六'];
-  return `${d.getFullYear()} · ${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} (週${days[d.getDay()]})`;
-}
-
-function render() { renderSummary(); renderSessions(); }
-
-// ── COURT FEE ──────────────────────────────────────────────────────
-function updateFeePreview() {
-  const h = parseInt(document.getElementById('feeHours').value);
-  const el = document.getElementById('feePreview');
-  if (h > 0) {
-    const total = h * 800;
-    const per = Math.round(total / 4);
-    el.textContent = `總計 $${total.toLocaleString()} · 每人 $${per.toLocaleString()}`;
-  } else {
-    el.textContent = '';
-  }
-}
-function addFeeRecord() {
-  const label = document.getElementById('feeLabel').value.trim();
-  const hours = parseInt(document.getElementById('feeHours').value);
-  if (!label || !hours) { alert('請填寫季別名稱與小時數'); return; }
-  const total = hours * 800;
-  const rec = {
-    id: 'fee_' + Date.now(),
-    label,
-    total,
-    hours,
-    paid: { NOMO:false, JENNY:false, WILL:false, EVEN:false }
-  };
-  feeRef.child(rec.id).set(rec);
-  document.getElementById('feeLabel').value = '';
-  document.getElementById('feeHours').value = '';
-  document.getElementById('feePreview').textContent = '';
-}
-
-function setFeePaid(feeId, name, val) {
-  feeRef.child(feeId).child('paid').child(name).set(val);
-}
-
-function deleteFeeRecord(feeId) {
-  if (!confirm('確定刪除此場地費紀錄？')) return;
-  feeRef.child(feeId).remove();
-}
-
-function renderFees() {
-  const list = document.getElementById('feeList');
-  if (!list) return;
-  if (!feeData.length) {
-    list.innerHTML = '<div class="fee-empty">尚無場地費紀錄</div>';
-    return;
-  }
-  const sorted = [...feeData].sort((a,b) => a.id.localeCompare(b.id));
-  list.innerHTML = sorted.map(rec => {
-    const perPerson = Math.round(rec.total / 4);
-    const paidCount = STUDENTS.filter(n => rec.paid && rec.paid[n]).length;
-    const playerRows = STUDENTS.map(name => {
-      const isPaid = rec.paid && rec.paid[name];
-      return `<div class="fee-player-row">
-        <span class="fee-player-name">${name}</span>
-        <span class="fee-player-amt">$${perPerson.toLocaleString()}</span>
-        <label class="fee-player-check">
-          <input type="checkbox" ${isPaid?'checked':''} onchange="setFeePaid('${rec.id}','${name}',this.checked)">
-          <span class="${isPaid?'fee-paid-label':'fee-unpaid-label'}">${isPaid?'已繳':'未繳'}</span>
-        </label>
-      </div>`;
-    }).join('');
-    return `<div class="fee-record">
-      <div class="fee-record-header">
-        <div>
-          <div class="fee-record-title">${rec.label}</div>
-          <div class="fee-record-meta">${rec.hours || rec.sessions || '?'} 小時 · 每人 $${perPerson.toLocaleString()}</div>
-        </div>
-        <button class="fee-record-del" onclick="deleteFeeRecord('${rec.id}')">✕</button>
-      </div>
-      ${playerRows}
-      <div class="fee-record-summary">
-        <span>總計 $${rec.total.toLocaleString()}</span>
-        <span>${paidCount}/4 已繳</span>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderSummary() {
-  const grid = document.getElementById('summaryGrid');
-  grid.innerHTML = '';
-  STUDENTS.forEach(name => {
-    let owed=0, paid=0, sessions=0;
-    data.sessions.forEach(s => {
-      if (!s.students[name].attend) return;
-      const c = getPerPerson(s); sessions++;
-      s.students[name].paid ? paid+=c : owed+=c;
+    return firebase.database().ref('tennis').update(updates).catch(err => {
+      console.error(err); toast('存檔失敗，請檢查網路');
     });
-    const clear = owed===0;
-    grid.innerHTML += `
-      <div class="summary-card">
-        <div class="player-name">${name}</div>
-        <div class="stat">${sessions} sessions attended</div>
-        <div class="amount${clear?' cleared':''}">
-          ${clear ? '✓ Settled' : `$ ${owed.toLocaleString()}`}
-        </div>
-        <div class="paid-tag ${clear?'ok':'due'}">
-          已付 $${paid.toLocaleString()}
-        </div>
-      </div>`;
-  });
-}
+  }
+};
 
-function renderSessions() {
-  const list = document.getElementById('sessionList');
-  const btn = document.getElementById('pastToggleBtn');
-  const countEl = document.getElementById('sessionCount');
-  let sorted = [...data.sessions].sort((a,b)=>a.date.localeCompare(b.date));
-  let filtered = showPast ? sorted : sorted.filter(s=>!isPast(s.date));
-  const pastCount = sorted.filter(s=>isPast(s.date)).length;
-  btn.textContent = showPast ? '隱藏過去課程' : `顯示過去課程（${pastCount} 堂）`;
-  countEl.textContent = `${filtered.length} sessions`;
-
-  if (!filtered.length) {
-    list.innerHTML = '<div class="empty-state">No sessions found · 尚無課程記錄</div>';
+function init() {
+  if (DEMO) {
+    document.getElementById('demoBar').innerHTML = '<div class="demo-bar">預覽模式：可以隨意點，不會存檔</div>';
+    setLive(null, '預覽');
+    fetch(DB_URL + '/tennis.json').then(r => r.json()).then(v => {
+      state.sessions = (v && v.sessions) || {};
+      state.fees = (v && v.courtFees) || {};
+      state.court = (v && v.court) || null;
+      state.ready = true; ensureFridays(); render();
+    }).catch(() => { state.ready = true; ensureFridays(); render(); });
     return;
   }
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  db.ref('.info/connected').on('value', s => setLive(!!s.val(), s.val() ? '即時同步' : '離線'));
+  let gotS = false;
+  db.ref('tennis/sessions').on('value', s => {
+    state.sessions = s.val() || {};
+    if (!gotS) { gotS = true; state.ready = true; ensureFridays(); }
+    render();
+  });
+  db.ref('tennis/courtFees').on('value', s => { state.fees = s.val() || {}; render(); });
+  db.ref('tennis/court').on('value', s => { state.court = s.val() || null; render(); });
+}
+function setLive(on, text) {
+  const el = document.getElementById('live');
+  el.className = 'live' + (on === true ? ' on' : on === false ? ' off' : '');
+  document.getElementById('liveLabel').textContent = text;
+}
+// 往後 8 週的週五自動補上（固定 id，兩支手機同時開也不會重複）
+function ensureFridays() {
+  const miss = C.missingFridays(sessionList(), today(), 56);
+  if (!miss.length) return;
+  const up = {};
+  miss.forEach(d => { const s = C.makeSession(d); up['sessions/' + s.id] = s; });
+  store.write(up);
+}
 
-  list.innerHTML = filtered.map(s => {
-    const rainout = !!s.rainout;
-    const per = rainout ? 0 : getPerPerson(s);
-    const total = rainout ? 0 : getTotal(s);
-    const count = rainout ? 0 : getCount(s);
-    const past = isPast(s.date);
-    const today = isToday(s.date);
+/* ── 畫面 ── */
+function render() {
+  const a = document.activeElement;
+  if (a && a.classList && a.classList.contains('note')) { pendingRender = true; return; }
+  pendingRender = false;
+  renderTabs();
+  const app = document.getElementById('app');
+  if (!state.ready) { app.innerHTML = '<div class="empty">載入中…</div>'; return; }
+  app.innerHTML = ui.tab === 'week' ? viewWeek() : ui.tab === 'list' ? viewList() : viewTotal();
+}
 
-    const cards = STUDENTS.map(name => {
-      const st = s.students[name];
-      return `
-        <div class="student-card ${st.attend?'attending':'absent'}">
-          <div class="player-initial">${name[0]}</div>
-          <div class="student-name-card">${name}</div>
-          <div class="toggle-group">
-            <button class="toggle-btn ${st.attend?'active-attend':''}"
-              onclick="setAttend('${s.id}','${name}',true)">出席</button>
-            <button class="toggle-btn ${!st.attend?'active-absent':''}"
-              onclick="setAttend('${s.id}','${name}',false)">請假</button>
-          </div>
-          ${st.attend ? `
-          <div class="payment-row">
-            <label class="payment-label ${st.paid?'paid':''}">
-              <input type="checkbox" ${st.paid?'checked':''}
-                onchange="setPaid('${s.id}','${name}',this.checked)">
-              ${st.paid ? '✓ 已繳費' : '未繳費'}
-            </label>
-            <div class="per-cost ${st.paid?'paid-cost':'owed'}">
-              $ ${per.toLocaleString()}
-            </div>
-          </div>` : `<div class="per-cost" style="font-style:italic;color:var(--muted)">— Absent —</div>`}
-        </div>`;
-    }).join('');
+const ICON = {
+  week: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.2 6.2c3 2.6 3 9 0 11.6M18.8 6.2c-3 2.6-3 9 0 11.6"/></svg>',
+  list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  total: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>'
+};
+function renderTabs() {
+  const pairs = C.pairNet(C.allDebts(sessionList(), feeList())).length;
+  const tabs = [['week', '本週', 0], ['list', '課表', 0], ['total', '總表', pairs]];
+  document.getElementById('tabbar').innerHTML = tabs.map(t =>
+    `<button class="tab${ui.tab === t[0] ? ' on' : ''}" data-act="tab" data-tab="${t[0]}">${ICON[t[0]]}<span>${t[1]}</span>${t[2] ? `<i class="dot num">${t[2]}</i>` : ''}</button>`
+  ).join('');
+}
 
-    const collapsed = (past && !today) || rainout;
-    const paidCount = STUDENTS.filter(n=>s.students[n].attend && s.students[n].paid).length;
-    const attendCount = STUDENTS.filter(n=>s.students[n].attend).length;
-    const allPaid = attendCount > 0 && paidCount === attendCount;
+function badge(s) {
+  const c = C.sessionCalc(s);
+  const future = s.date > today();
+  if (c.status === 'rainout') return c.off === 'stop' ? '<span class="badge">停課</span>' : '<span class="badge rain">雨天停課</span>';
+  if (c.status === 'empty') return '<span class="badge">沒人上課</span>';
+  if (c.status === 'settled') return '<span class="badge ok">已結清</span>';
+  if (c.status === 'open') return `<span class="badge bad">${c.unpaid.length} 人未還</span>`;
+  return future ? '<span class="badge">尚未上課</span>' : '';
+}
 
-    const headerBadge = rainout
-      ? `<span class="rainout-badge">🌧 雨天停課</span>`
-      : `<div class="fee-badge">${count} players · $${total.toLocaleString()}</div>`;
-
-    const headerRight = collapsed
-      ? `${!rainout ? `<span class="collapse-summary">${allPaid?'<span style="color:#b8ddc9">✓ 全額已繳</span>':`<span style="color:#f9c8d0">${paidCount}/${attendCount} 已繳</span>`}</span>` : ''}
-         <span class="collapse-arrow" id="arrow_${s.id}">▸</span>`
-      : `<button class="delete-btn" onclick="deleteSession('${s.id}')">✕</button>`;
-
-    return `
-      <div class="session-card ${collapsed?'collapsed':''} ${rainout?'rainout':''}" id="card_${s.id}">
-        <div class="session-header ${collapsed?'collapsible':''}" onclick="${collapsed?`toggleSession('${s.id}')`:''}" style="${collapsed?'cursor:pointer':''}">
-          <div class="session-date-wrap">
-            <div class="session-date">
-              ${today?'<span class="today-dot"></span>':''}${formatDate(s.date)}
-            </div>
-            <div class="session-time">⏱ ${s.time}${s.note?' · '+s.note:''}</div>
-          </div>
-          <div class="session-meta">
-            ${headerBadge}
-            ${headerRight}
-          </div>
-        </div>
-        <div class="session-stripe"></div>
-        <div class="session-body" id="body_${s.id}" style="${collapsed?'display:none':''}">
-          ${rainout
-            ? `<div class="rainout-banner">🌧<span>RAIN CANCELLATION</span></div>`
-            : `<div class="students-grid">${cards}</div>`
-          }
-          <div class="session-note">
-            <span class="note-label">Note ·</span>
-            <input class="note-input" type="text" value="${s.note}"
-              placeholder="加課、補課、場地變更、教練費調整…"
-              onchange="setNote('${s.id}',this.value)">
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">
-            <button class="btn-rainout ${rainout?'active':''}" onclick="setRainout('${s.id}',${!rainout})">
-              ${rainout ? '↩ 恢復上課' : '🌧 雨天停課'}
-            </button>
-            ${past&&!today?`<button class="delete-btn" style="background:rgba(220,53,69,0.15);color:#c0392b;border:1px solid #e0a0a0" onclick="deleteSession('${s.id}')">刪除此課程</button>`:''}
-          </div>
-        </div>
-      </div>`;
+function sessionBody(s) {
+  const c = C.sessionCalc(s);
+  const id = esc(s.id);
+  if (s.rainout) {
+    return `<div class="rain-box">${c.off === 'stop' ? '這堂課停課' : '這堂課因雨停課'}，不計教練費。</div>
+      ${noteField(s)}
+      <div class="s-foot"><button class="btn" data-act="rain" data-id="${id}" data-val="0">恢復上課</button>
+      <button class="btn red" data-act="del" data-id="${id}">刪除這堂</button></div>`;
+  }
+  const chips = PEOPLE.map(n => {
+    const on = c.attendees.indexOf(n) !== -1;
+    return `<button class="chip${on ? ' on' : ''}" data-act="attend" data-id="${id}" data-name="${n}">${on ? '✓ ' : ''}${LABEL[n]}</button>`;
   }).join('');
+  const payers = PEOPLE.map(n =>
+    `<button class="chip pay${c.payer === n ? ' on' : ''}" data-act="payer" data-id="${id}" data-name="${n}">${LABEL[n]}</button>`
+  ).join('');
+  let repay = '';
+  if (c.count && c.payer) {
+    const others = c.attendees.filter(n => n !== c.payer);
+    repay = `<div class="lbl">還給 ${LABEL[c.payer]}</div><div class="repay">` + (others.length ? others.map(n => {
+      const paid = !!(s.students[n] && s.students[n].paid);
+      return `<div class="row"><span class="grow">${LABEL[n]}</span><span class="num dim">${money(c.share)}</span>
+        <button class="pill${paid ? ' on' : ''}" data-act="paid" data-id="${id}" data-name="${n}">${paid ? '已還' : '未還'}</button></div>`;
+    }).join('') : `<div class="hint">只有 ${LABEL[c.payer]} 一個人上課，沒有人需要還錢。</div>`) + '</div>';
+  } else if (c.count) {
+    repay = `<div class="hint" style="padding-top:8px">選了代墊人之後，這裡會列出誰要還他多少。</div>`;
+  }
+  return `<div class="lbl">誰有上課</div><div class="chips">${chips}</div>
+    <div class="sum"><div><b class="num">${c.count} 人</b><span>上課人數</span></div>
+      <div><b class="num">${money(c.total)}</b><span>教練費</span></div>
+      <div><b class="num">${c.count ? money(c.share) : '—'}</b><span>每人分攤</span></div></div>
+    <div class="lbl">打幾小時</div><div class="chips" style="grid-template-columns:repeat(5,1fr)">${[1, 1.5, 2, 2.5, 3].map(n =>
+      `<button class="chip pay${C.sessionHours(s) === n ? ' on' : ''}" data-act="hours" data-id="${id}" data-val="${n}">${n}</button>`).join('')}</div>
+    ${c.count ? `<div class="lbl">誰先付給教練</div><div class="chips">${payers}</div>` : ''}
+    ${repay}
+    ${noteField(s)}
+    <div class="s-foot"><button class="btn" data-act="rain" data-id="${id}" data-val="1">雨天</button>
+    <button class="btn" data-act="rain" data-id="${id}" data-val="2">停課</button>
+    <button class="btn red" data-act="del" data-id="${id}">刪除這堂</button></div>`;
+}
+function noteField(s) {
+  return `<div style="padding:12px 16px 0"><input class="note" data-act="note" data-id="${esc(s.id)}" value="${esc(s.note || '')}" placeholder="備註（例如：連假停租一次）" maxlength="80"></div>`;
+}
+function sessionCard(s) {
+  return `<div class="card"><div class="s-head"><span class="s-date">${longDate(s.date)}</span>${badge(s)}</div>
+    <div class="s-time" style="padding:0 16px">${esc(s.time || C.DEFAULT_TIME)} · 青年公園</div>${sessionBody(s)}</div>`;
+}
+/* 本週 */
+function viewWeek() {
+  const list = sessionList();
+  const f = C.focusSession(list, today());
+  if (!f) return `<div class="card"><div class="empty">還沒有任何課程</div></div><button class="btn solid full" data-act="addSession">新增一堂課</button>`;
+  const title = f.date === today() ? '今天' : f.date < today() ? '剛上完的這堂' : '下一堂';
+  return `<div class="sec-title">${title}</div>${sessionCard(f)}`;
 }
 
-function setAttend(id,name,val) {
-  const s=data.sessions.find(x=>x.id===id);
-  s.students[name].attend=val;
-  if(!val) s.students[name].paid=false;
-  save(); render();
+/* 課表 */
+function dayKind(s) {
+  const c = C.sessionCalc(s);
+  if (c.status === 'rainout') return c.off;            // rain / stop
+  if (c.status === 'empty') return 'stop';
+  return s.date > today() ? 'plan' : 'cls';
 }
-function setPaid(id,name,val) {
-  data.sessions.find(x=>x.id===id).students[name].paid=val;
-  save(); render();
+function viewList() {
+  const t = today(), cur = t.slice(0, 7);
+  const list = sessionList();
+  const byDate = {};
+  list.forEach(s => { if (!byDate[s.date]) byDate[s.date] = s; });
+  const first = list.length && list[0].date.slice(0, 7) < cur ? list[0].date.slice(0, 7) : cur;
+  // 最新顯示到「本月 + 1」，由新到舊往下排
+  const nx = new Date(Number(cur.slice(0, 4)), Number(cur.slice(5, 7)), 1);
+  const last = nx.getFullYear() + '-' + String(nx.getMonth() + 1).padStart(2, '0');
+  const cards = [];
+  let html = `<div class="legend"><span><i class="cls"></i>上課</span><span><i class="plan"></i>預定</span><span><i class="stop"></i>停課</span><span><i class="rain"></i>雨天</span><span><i style="background:var(--red);border-radius:50%;width:9px;height:9px"></i>有人未還</span></div>`;
+  let y = Number(first.slice(0, 4)), m = Number(first.slice(5, 7));
+  for (let guard = 0; guard < 60; guard++) {
+    const ym = y + '-' + String(m).padStart(2, '0');
+    if (ym > last) break;
+    const days = new Date(y, m, 0).getDate(), lead = new Date(y, m - 1, 1).getDay();
+    let cells = '日一二三四五六'.split('').map(w => `<div class="wd">${w}</div>`).join('') + '<div></div>'.repeat(lead);
+    let n = 0, openS = null;
+    for (let d = 1; d <= days; d++) {
+      const ds = ym + '-' + String(d).padStart(2, '0');
+      const s = byDate[ds], td = ds === t ? ' today' : '';
+      if (!s) { cells += `<button class="day${td}" data-act="addSession" data-date="${ds}">${d}</button>`; continue; }
+      const c = C.sessionCalc(s), kind = dayKind(s);
+      if (kind === 'cls') n++;
+      if (ui.open === s.id) openS = s;
+      const tag = kind === 'rain' ? '雨天' : kind === 'stop' ? '停課' : c.count + ' 人';
+      cells += `<button class="day ${kind}${td}${ui.open === s.id ? ' sel' : ''}" data-act="open" data-id="${esc(s.id)}">${d}<small>${tag}</small>${c.status === 'open' ? '<i class="due"></i>' : ''}</button>`;
+    }
+    cards.push(`<div class="card" id="m-${ym}"><div class="m-title">${y} 年 ${m} 月<small>${n ? '上課 ' + n + ' 堂' : ''}</small></div><div class="cal">${cells}</div>${
+      openS ? `<div class="detail" id="detail"><div class="s-head"><span class="s-date">${longDate(openS.date)}</span>${badge(openS)}</div>${sessionBody(openS)}</div>` : ''}</div>`);
+    m++; if (m > 12) { m = 1; y++; }
+  }
+  return html + cards.reverse().join('') + `<div class="sec-foot" style="margin-bottom:12px">點有顏色的日期看明細；點空白日期可以加課。</div>`;
 }
-function setNote(id,val) {
-  data.sessions.find(x=>x.id===id).note=val;
-  save();
-}
-function setRainout(id,val) {
-  data.sessions.find(x=>x.id===id).rainout=val;
-  save(); render();
-}
-function deleteSession(id) {
-  if(!confirm('確定刪除這堂課程？')) return;
-  data.sessions=data.sessions.filter(s=>s.id!==id);
-  save(); render();
-}
-function togglePast() { showPast=!showPast; renderSessions(); }
-function toggleSession(id) {
-  const body = document.getElementById('body_'+id);
-  const arrow = document.getElementById('arrow_'+id);
-  const isHidden = body.style.display === 'none';
-  body.style.display = isHidden ? 'block' : 'none';
-  if (arrow) arrow.classList.toggle('open', isHidden);
+/* 總表 */
+function viewTotal() {
+  const sessions = sessionList(), fees = feeList();
+  const pairs = C.pairNet(C.allDebts(sessions, fees));
+  const sum = C.personSummary(sessions, fees, today(), C.SUMMARY_FROM);
+  let html = '<div class="sec-title">誰要給誰多少</div><div class="card">';
+  if (!pairs.length) html += `<div class="allclear"><b>全部結清</b><span>目前沒有人欠錢</span></div>`;
+  else html += pairs.map((p, i) => {
+    const coach = p.items.filter(x => x.kind === 'coach').length, court = p.items.filter(x => x.kind === 'court').length;
+    const detail = [coach ? `教練費 ${coach} 筆` : '', court ? `場地費 ${court} 筆` : ''].filter(Boolean).join(' · ');
+    return `<div class="settle"><div class="who">${LABEL[p.from]}<span class="arrow">→</span>${LABEL[p.to]}<small>${detail}${p.amt === 0 ? ' · 互抵後剛好打平' : ''}</small></div>
+      <span class="amt num">${money(p.amt)}</span><button class="btn" data-act="settlePair" data-i="${i}">已還清</button></div>`;
+  }).join('');
+  html += '</div>';
+  if (pairs.some(p => p.amt > 0)) html += `<button class="btn line full" data-act="remind">傳催款訊息到 LINE 群組</button>`;
+
+  html += `<div class="sec-title">每人小計</div><div class="card"><table class="tot num"><tr><th></th><th>上課</th><th>教練費</th><th>場地費</th><th>還欠</th><th>待收</th></tr>` +
+    PEOPLE.map(n => { const x = sum[n]; return `<tr><td><b>${LABEL[n]}</b></td><td>${x.classes} 堂</td><td>${money(x.coach)}</td><td>${money(x.court)}</td>
+      <td class="${x.owes ? 'owe' : ''}">${x.owes ? money(x.owes) : '—'}</td><td class="${x.owed ? 'get' : ''}">${x.owed ? money(x.owed) : '—'}</td></tr>`; }).join('') +
+    `</table></div><div class="sec-foot">上課堂數與教練費從 ${shortDate(C.SUMMARY_FROM)} 起算；「還欠」「待收」是互抵前的未還金額。</div>`;
+
+  const bal = C.courtBalance(sessions, state.court, Date.now());
+  html += `<div class="sec-title">場地剩餘時數</div><div class="card">` + (bal
+    ? `<div class="sum" style="margin:14px 16px 4px;grid-template-columns:1fr 1fr">
+        <div><b class="num" style="font-size:28px;color:${bal.left < 0 ? 'var(--red)' : bal.left <= 4 ? 'var(--orange)' : 'var(--court)'}">${bal.left}</b><span>${bal.left < 0 ? '已超用小時' : '還剩小時'}</span></div>
+        <div><b class="num" style="font-size:28px">${bal.classesLeft}</b><span>還可以上幾堂</span></div></div>
+      <div class="hint" style="padding-top:8px">${bal.left <= 0 ? '時數用完了，該續租了。' : ''}上次輸入 ${bal.base} 小時，之後上了 ${bal.held} 堂、扣 ${bal.used} 小時。每上一堂自動扣當天打的時數（預設 ${C.HOURS_PER_CLASS} 小時），雨天與停課不扣。</div>`
+    : `<div class="empty">還沒輸入場地剩餘時數</div>`) +
+    `<div class="s-foot"><button class="btn" data-act="editCourt">${bal ? '修改剩餘時數' : '輸入剩餘時數'}</button></div></div>`;
+
+  html += `<div class="sec-title">場地費（季租 · 每小時 ${money(C.COURT_RATE)} · 四人平分）</div>`;
+  if (!fees.length) html += `<div class="card"><div class="empty">還沒有場地費紀錄</div></div>`;
+  fees.forEach(f => {
+    const c = C.feeCalc(f), id = esc(f.id);
+    const payers = PEOPLE.map(n => `<button class="chip pay${c.payer === n ? ' on' : ''}" data-act="feePayer" data-id="${id}" data-name="${n}">${LABEL[n]}</button>`).join('');
+    let rows = '';
+    if (c.payer) rows = `<div class="lbl">還給 ${LABEL[c.payer]}</div>` + PEOPLE.filter(n => n !== c.payer).map(n => {
+      const paid = !!(f.paid && f.paid[n]);
+      return `<div class="row"><span class="grow">${LABEL[n]}</span><span class="num dim">${money(c.share)}</span>
+        <button class="pill${paid ? ' on' : ''}" data-act="feePaid" data-id="${id}" data-name="${n}">${paid ? '已還' : '未還'}</button></div>`;
+    }).join('');
+    html += `<div class="card"><div class="fee-head"><b>${esc(f.label || '場地費')}</b><span class="dim num" style="font-size:14px;color:var(--label-2)">${c.hours} 小時</span><span class="t num">${money(c.total)}</span></div>
+      <div class="hint">每人 ${money(c.share)}</div>
+      <div class="lbl">誰先付的</div><div class="chips">${payers}</div>${rows}
+      <div class="s-foot"><button class="btn red" data-act="feeDel" data-id="${id}">刪除這筆</button></div></div>`;
+  });
+  html += `<button class="btn solid full" data-act="addFee">新增一季場地費</button>`;
+  return html;
 }
 
-function openModal() {
-  const d=new Date(); const diff=(5-d.getDay()+7)%7||7;
-  d.setDate(d.getDate()+diff);
-  document.getElementById('newDate').value=d.toISOString().split('T')[0];
-  document.getElementById('newTime').value='19:00–21:00';
-  document.getElementById('newNote').value='';
-  document.getElementById('modalOverlay').classList.add('open');
-}
-function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
-function addSession() {
-  const date=document.getElementById('newDate').value;
-  if(!date){alert('請選擇日期');return;}
-  if(data.sessions.find(s=>s.date===date)){alert('此日期已有課程');return;}
-  data.sessions.push(makeSession(date,document.getElementById('newTime').value,document.getElementById('newNote').value));
-  save(); render(); closeModal();
-}
-document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+/* ── 動作 ── */
+function getS(id) { const s = state.sessions[id]; return s && s.date ? s : null; }   // 不對不存在的課寫入單一欄位
+function getF(id) { const f = state.fees[id]; return f && f.id ? f : null; }
 
-render();
+const actions = {
+  tab(d) { ui.tab = d.tab; ui.open = null; render(); window.scrollTo(0, 0); },
+  open(d) {
+    ui.open = ui.open === d.id ? null : d.id; render();
+    const el = document.getElementById('detail');
+    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  },
+  attend(d) {
+    const s = getS(d.id); if (!s) return;
+    const cur = !!(s.students && s.students[d.name] && s.students[d.name].attend);
+    const up = {};
+    up[`sessions/${d.id}/students/${d.name}/attend`] = !cur;
+    if (cur) up[`sessions/${d.id}/students/${d.name}/paid`] = false;
+    store.write(up);
+  },
+  payer(d) {
+    const s = getS(d.id); if (!s) return;
+    const up = {}; up[`sessions/${d.id}/payer`] = s.payer === d.name ? '' : d.name;
+    store.write(up);
+  },
+  paid(d) {
+    const s = getS(d.id); if (!s) return;
+    const cur = !!(s.students && s.students[d.name] && s.students[d.name].paid);
+    const up = {}; up[`sessions/${d.id}/students/${d.name}/paid`] = !cur;
+    store.write(up);
+  },
+  hours(d) {
+    if (!getS(d.id)) return;
+    const up = {}; up[`sessions/${d.id}/hours`] = Number(d.val);
+    store.write(up);
+  },
+  rain(d) {
+    if (!getS(d.id)) return;
+    const up = {};
+    up[`sessions/${d.id}/rainout`] = d.val !== '0';
+    up[`sessions/${d.id}/offType`] = d.val === '2' ? 'stop' : null;
+    store.write(up);
+  },
+  del(d) {
+    const s = getS(d.id); if (!s) return;
+    if (!confirm(`確定刪除 ${shortDate(s.date)} 這堂課？出席與還款紀錄會一起刪掉。`)) return;
+    const up = {}; up[`sessions/${d.id}`] = null; ui.open = null;
+    store.write(up);
+  },
+  remind() {
+    const url = IS_LOCAL ? 'https://nomowho.github.io/tennis-court/tennis-schedule.html' : location.origin + location.pathname;
+    const text = C.reminderText(sessionList(), feeList(), today(), url);
+    if (!text) return toast('目前沒有人欠錢');
+    openSheet('催款訊息', `<textarea class="msg" id="fMsg">${esc(text)}</textarea>
+      <button class="btn line full" data-act="sendLine">開啟 LINE，選群組送出</button>
+      <div style="height:8px"></div><button class="btn full" data-act="copyMsg">複製文字</button>
+      <div class="sec-foot" style="margin:10px 4px 0">文字可以先改再送。按下後 LINE 會讓你選要傳到哪個群組。</div>`);
+  },
+  sendLine() {
+    window.open('https://line.me/R/share?text=' + encodeURIComponent(document.getElementById('fMsg').value), '_blank');
+  },
+  copyMsg() {
+    const el = document.getElementById('fMsg');
+    const done = () => toast('已複製，貼到 LINE 群組即可');
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(done, () => { el.select(); document.execCommand('copy'); done(); });
+    else { el.select(); document.execCommand('copy'); done(); }
+  },
+  settlePair(d) {
+    const p = C.pairNet(C.allDebts(sessionList(), feeList()))[Number(d.i)];
+    if (!p) return;
+    if (!confirm(`${LABEL[p.from]} 已經把 ${money(p.amt)} 給 ${LABEL[p.to]} 了嗎？\n兩人之間的 ${p.items.length} 筆會全部標成已還。`)) return;
+    const up = {};
+    p.items.forEach(x => {
+      if (x.kind === 'coach' && getS(x.id)) up[`sessions/${x.id}/students/${x.from}/paid`] = true;
+      if (x.kind === 'court' && getF(x.id)) up[`courtFees/${x.id}/paid/${x.from}`] = true;
+    });
+    store.write(up).then(() => toast('已標成還清'));
+  },
+  feePayer(d) {
+    const f = getF(d.id); if (!f) return;
+    const up = {}; up[`courtFees/${d.id}/payer`] = f.payer === d.name ? '' : d.name;
+    store.write(up);
+  },
+  feePaid(d) {
+    const f = getF(d.id); if (!f) return;
+    const up = {}; up[`courtFees/${d.id}/paid/${d.name}`] = !(f.paid && f.paid[d.name]);
+    store.write(up);
+  },
+  feeDel(d) {
+    const f = getF(d.id); if (!f) return;
+    if (!confirm(`確定刪除「${f.label || '場地費'}」這筆場地費？`)) return;
+    const up = {}; up[`courtFees/${d.id}`] = null;
+    store.write(up);
+  },
+  addSession(d) {
+    const list = sessionList();
+    const next = (d && d.date) || C.addDays(list.length ? list[list.length - 1].date : today(), 7);
+    openSheet('新增一堂課', `<div class="card"><div class="field"><label>日期</label><input type="date" id="fDate" value="${next}"></div>
+      <div class="field"><label>時間</label><input type="text" id="fTime" value="${C.DEFAULT_TIME}"></div>
+      <div class="field"><label>備註</label><input type="text" id="fNote" placeholder="選填" maxlength="80"></div></div>
+      <button class="btn solid full" data-act="saveSession">加入課表</button>`);
+  },
+  saveSession() {
+    const date = document.getElementById('fDate').value;
+    if (!date) return toast('請選日期');
+    if (sessionList().some(s => s.date === date)) return toast('這一天已經有課了');
+    const s = C.makeSession(date, date + '_' + Math.random().toString(36).slice(2, 7));
+    s.time = document.getElementById('fTime').value.trim() || C.DEFAULT_TIME;
+    s.note = document.getElementById('fNote').value.trim();
+    const up = {}; up['sessions/' + s.id] = s;
+    closeSheet(); ui.tab = 'list'; ui.open = s.id;
+    store.write(up);
+  },
+  addFee() {
+    openSheet('新增一季場地費', `<div class="card"><div class="field"><label>名稱</label><input type="text" id="fLabel" placeholder="例如：2026 冬季" maxlength="30"></div>
+      <div class="field"><label>小時數</label><input type="number" id="fHours" inputmode="decimal" min="0" step="0.5" placeholder="例如 24"></div>
+      <div class="field"><label>總金額</label><input type="text" id="fTotal" value="—" readonly tabindex="-1"></div>${
+        state.court ? '' : `<div class="field"><label>起算日</label><input type="date" id="fStart" value="${today()}"></div>`}</div>
+      <div class="sec-foot" id="fTopUp" style="margin:-4px 4px 4px">填好小時數後，這裡會顯示場地剩餘時數會變成多少。</div>
+      <div class="lbl" style="padding-left:16px">誰先付的</div><div class="chips" style="padding:0 0 16px" id="fPayerBox">${
+        PEOPLE.map(n => `<button class="chip pay" data-act="pickFeePayer" data-name="${n}">${LABEL[n]}</button>`).join('')}</div>
+      <button class="btn solid full" data-act="saveFee">存起來</button>`);
+  },
+  pickFeePayer(d, el) {
+    document.querySelectorAll('#fPayerBox .chip').forEach(b => b.classList.toggle('on', b === el && !el.classList.contains('on')));
+  },
+  saveFee() {
+    const label = document.getElementById('fLabel').value.trim();
+    const hours = Number(document.getElementById('fHours').value);
+    const picked = document.querySelector('#fPayerBox .chip.on');
+    if (!label) return toast('請填名稱');
+    if (!(hours > 0)) return toast('請填小時數');
+    const id = 'fee_' + Date.now().toString(36);
+    const paid = {}; PEOPLE.forEach(n => { paid[n] = false; });
+    const up = {};
+    const top = topUpPreview(hours);
+    up['court'] = { hours: top.hours, setAt: top.setAt };
+    up['courtFees/' + id] = { id, label, hours, rate: C.COURT_RATE, total: hours * C.COURT_RATE, payer: picked ? picked.dataset.name : '', paid, createdAt: Date.now() };
+    closeSheet();
+    store.write(up).then(() => toast(`場地剩餘時數更新為 ${top.hours} 小時`));
+  },
+  editCourt() {
+    const bal = C.courtBalance(sessionList(), state.court, Date.now());
+    openSheet('場地剩餘時數', `<div class="card"><div class="field"><label>還剩幾小時</label><input type="number" id="fLeft" inputmode="decimal" min="0" step="0.5" value="${bal ? bal.left : ''}" placeholder="例如 24"></div></div>
+      <button class="btn solid full" data-act="saveCourt">存起來</button>
+      <div class="sec-foot" style="margin:10px 4px 0">填「現在」還剩的時數。存好之後每上一堂課會自動扣當天打的時數（預設 ${C.HOURS_PER_CLASS} 小時）；新增一季場地費時會自動加上去，也可以隨時回來手動改。</div>`);
+  },
+  saveCourt() {
+    const v = document.getElementById('fLeft').value;
+    if (v === '' || !(Number(v) >= 0)) return toast('請填小時數');
+    closeSheet();
+    store.write({ court: { hours: Number(v), setAt: Date.now() } });
+  },
+  closeSheet() { closeSheet(); }
+};
+
+function topUpPreview(hours) {
+  const st = document.getElementById('fStart');
+  return C.seasonTopUp(sessionList(), state.court, hours, (st && st.value) || today(), Date.now());
+}
+function showTopUp() {
+  const el = document.getElementById('fTopUp'); if (!el) return;
+  const hours = Number(document.getElementById('fHours').value);
+  if (!(hours > 0)) { el.textContent = '填好小時數後，這裡會顯示場地剩餘時數會變成多少。'; return; }
+  const t = topUpPreview(hours);
+  el.textContent = t.hadBalance
+    ? `場地剩餘時數：目前 ${t.before} 小時 + 新買 ${hours} 小時 = ${t.hours} 小時。`
+    : `場地剩餘時數：新買 ${hours} 小時${t.classes ? `，扣掉起算日之後已上的 ${t.classes} 堂（${t.deducted} 小時）` : ''} = ${t.hours} 小時。`;
+}
+function openSheet(title, body) {
+  document.getElementById('sheet').innerHTML = `<div class="sheet-top"><button data-act="closeSheet">取消</button><b>${title}</b><span style="width:34px"></span></div>${body}`;
+  document.getElementById('sheetBg').classList.add('open');
+}
+function closeSheet() { document.getElementById('sheetBg').classList.remove('open'); }
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+document.addEventListener('click', e => {
+  if (e.target.id === 'sheetBg') return closeSheet();
+  const el = e.target.closest('[data-act]');
+  if (!el || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return;
+  // iPhone 點按鈕不會讓輸入框失焦，先手動收起備註欄，避免畫面卡住不更新
+  const a = document.activeElement;
+  if (a && a.classList && a.classList.contains('note')) a.blur();
+  const fn = actions[el.dataset.act];
+  if (fn) fn(el.dataset, el);
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.act === 'note') {
+    const s = getS(el.dataset.id); if (!s) return;
+    const up = {}; up[`sessions/${el.dataset.id}/note`] = el.value.trim();
+    store.write(up);
+  }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'fHours' || e.target.id === 'fStart') showTopUp();
+  if (e.target.id === 'fHours') {
+    const h = Number(e.target.value);
+    document.getElementById('fTotal').value = h > 0 ? `${money(h * C.COURT_RATE)}（每人 ${money(Math.round(h * C.COURT_RATE / PEOPLE.length))}）` : '—';
+  }
+});
+document.addEventListener('focusout', e => {
+  if (e.target.classList && e.target.classList.contains('note')) setTimeout(() => { if (pendingRender) render(); }, 0);
+});
+
+init();
 </script>
 </body>
 </html>
