@@ -143,6 +143,7 @@ input, select { font: inherit; color: inherit; }
 .settle .who small { display: block; font-size: 12px; font-weight: 400; color: var(--label-2); margin-top: 2px; }
 .settle .amt { font-size: 20px; font-weight: 700; }
 .arrow { color: var(--label-3); margin: 0 4px; }
+.settle .unpaid { color: var(--red); font-weight: 600; }
 .allclear { text-align: center; padding: 28px 16px; }
 .allclear b { display: block; font-size: 19px; margin-bottom: 4px; }
 .allclear span { color: var(--label-2); font-size: 14px; }
@@ -632,8 +633,8 @@ function viewTotal() {
   else html += pairs.map((p, i) => {
     const coach = p.items.filter(x => x.kind === 'coach').length, court = p.items.filter(x => x.kind === 'court').length;
     const detail = [coach ? `教練費 ${coach} 筆` : '', court ? `場地費 ${court} 筆` : ''].filter(Boolean).join(' · ');
-    return `<div class="settle"><div class="who">${LABEL[p.from]}<span class="arrow">→</span>${LABEL[p.to]}<small>${detail}${p.amt === 0 ? ' · 互抵後剛好打平' : ''}</small></div>
-      <span class="amt num">${money(p.amt)}</span><button class="btn" data-act="settlePair" data-i="${i}">已還清</button></div>`;
+    return `<div class="settle"><div class="who">${LABEL[p.from]}<span class="arrow">→</span>${LABEL[p.to]}<small><b class="unpaid">未還</b> · ${detail}${p.amt === 0 ? ' · 互抵後剛好打平' : ''}</small></div>
+      <span class="amt num">${money(p.amt)}</span><button class="btn solid" data-act="settlePair" data-i="${i}">標記還清</button></div>`;
   }).join('');
   html += '</div>';
   if (pairs.some(p => p.amt > 0)) html += `<button class="btn line full" data-act="remind">傳催款訊息到 LINE 群組</button>`;
