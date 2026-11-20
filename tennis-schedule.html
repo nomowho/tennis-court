@@ -177,6 +177,9 @@ table.tot td.get { color: var(--green); font-weight: 600; }
 .field + .field::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: var(--sep); }
 .field label { width: 76px; flex: none; font-size: 16px; }
 .msg { width: 100%; min-height: 220px; border: none; outline: none; resize: vertical; background: var(--cell); border-radius: 14px; padding: 14px 16px; font: inherit; font-size: 15px; line-height: 1.5; color: var(--label); margin-bottom: 12px; }
+.date-pick { grid-template-columns: repeat(5, 1fr); }
+.date-pick .chip { height: 44px; font-size: 14px; flex-direction: column; gap: 0; }
+.date-pick .chip small { font-size: 10px; font-weight: 500; opacity: .8; }
 .btn.line { background: #06c755; color: #fff; }
 .field input { flex: 1; min-width: 0; border: none; background: none; outline: none; text-align: right; font-size: 16px; height: 46px; }
 .toast { position: fixed; left: 50%; bottom: calc(var(--tabbar-h) + var(--safe-b) + 16px); transform: translateX(-50%); background: rgba(30,30,32,.92); color: #fff; font-size: 14px; padding: 10px 16px; border-radius: 99px; z-index: 60; opacity: 0; pointer-events: none; transition: opacity .25s; white-space: nowrap; }
@@ -248,27 +251,86 @@ table.tot td.get { color: var(--green); font-weight: 600; }
   }
 
   // 一季場地費：四人平分，不看出席
-  function feeCalc(f) {
-    const hours = Number(f.hours) || 0;
+  // 一季場地費
+  // 有 dates（這季租的日期）：每堂場地費由「那堂有上課的人」平分；
+  //   已繳的人以繳費當下的出席為準鎖定（之後才請假不退款，其他人也不會因此多付）；
+  //   某堂沒人上課（也沒人鎖定）→ 四人平分。
+  //   已繳的人若因別人「繳費前」請假導致應繳變多，差額列為補繳。
+  // 沒有 dates（舊資料）：四人平分。
+  function feeCalc(f, sessions) {
     const rate = Number(f.rate) || COURT_RATE;
+    const dates = Array.isArray(f.dates) ? f.dates.slice().sort() : [];
+    const hours = dates.length ? dates.length * HOURS_PER_CLASS : (Number(f.hours) || 0);
     const total = hours * rate;
-    const share = Math.round(total / PEOPLE.length);
     const payer = isPerson(f.payer) ? f.payer : '';
-    const paid = f.paid || {};
-    let status, unpaid = [], debts = [];
+    const paid = f.paid || {}, snap = f.snap || {};
+    const due = {}, classes = {};
+    PEOPLE.forEach(n => { due[n] = 0; classes[n] = 0; });
+    const perDate = dates.length ? total / dates.length : 0;
+    const byDate = {};
+    (sessions || []).forEach(s => { if (s && s.date && !byDate[s.date]) byDate[s.date] = s; });
+    if (dates.length) {
+      dates.forEach(d => {
+        const s = byDate[d];
+        const set = PEOPLE.filter(n => {
+          if (s ? (s.students && s.students[n] && s.students[n].attend) : true) return true;
+          return (paid[n] || n === payer) && snap[n] && Array.isArray(snap[n].dates) && snap[n].dates.indexOf(d) !== -1;
+        });
+        const who = set.length ? set : PEOPLE;
+        who.forEach(n => { due[n] += perDate / who.length; if (set.length) classes[n]++; });
+      });
+    } else PEOPLE.forEach(n => { due[n] = total / PEOPLE.length; });
+    PEOPLE.forEach(n => { due[n] = Math.round(due[n]); });
+    const share = Math.round(total / PEOPLE.length);
+    let status, unpaid = [], topup = {}, debts = [];
     if (!payer) status = 'needPayer';
     else {
-      unpaid = PEOPLE.filter(n => n !== payer && !paid[n]);
-      debts = unpaid.map(n => ({ from: n, to: payer, amt: share, kind: 'court', id: f.id }));
-      status = unpaid.length ? 'open' : 'settled';
+      PEOPLE.forEach(n => {
+        if (n === payer) return;
+        if (!paid[n]) { if (due[n] > 0) { unpaid.push(n); debts.push({ from: n, to: payer, amt: due[n], kind: 'court', id: f.id }); } return; }
+        const locked = snap[n] && snap[n].amt != null ? Number(snap[n].amt) : due[n];
+        if (due[n] > locked) { topup[n] = due[n] - locked; debts.push({ from: n, to: payer, amt: due[n] - locked, kind: 'court', id: f.id, topup: true }); }
+      });
+      status = debts.length ? 'open' : 'settled';
     }
-    return { hours, rate, total, share, payer, unpaid, debts, status };
+    return { hours, rate, total, perDate, dates, due, classes, share, payer, unpaid, topup, debts, status };
+  }
+
+  // 繳費當下的鎖定紀錄：金額＋目前算在他頭上的日期
+  function feeSnapshot(f, sessions, n) {
+    const c = feeCalc(f, sessions);
+    const paid = f.paid || {}, snap = f.snap || {};
+    const byDate = {};
+    (sessions || []).forEach(s => { if (s && s.date && !byDate[s.date]) byDate[s.date] = s; });
+    const dates = c.dates.filter(d => {
+      const s = byDate[d];
+      if (s ? (s.students && s.students[n] && s.students[n].attend) : true) return true;
+      return (paid[n] || n === c.payer) && snap[n] && Array.isArray(snap[n].dates) && snap[n].dates.indexOf(d) !== -1;
+    });
+    return { amt: c.due[n], dates, at: Date.now() };
+  }
+
+  // 「12/4」「2026-12-04」一行一個 → yyyy-mm-dd；年份取離 today 最近、不早於 4 個月前的那一年
+  function parseDates(text, today) {
+    const t = parseDate(today), out = [];
+    String(text || '').split(/[\s,，、]+/).forEach(x => {
+      let m = x.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/), y, mo, d;
+      if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+      else if ((m = x.match(/^(\d{1,2})[/.月](\d{1,2})日?$/))) {
+        mo = +m[1]; d = +m[2]; y = t.getFullYear();
+        if (new Date(y, mo - 1, d) < new Date(t.getFullYear(), t.getMonth() - 4, t.getDate())) y++;
+      } else return;
+      const dt = new Date(y, mo - 1, d);
+      if (dt.getMonth() !== mo - 1) return;
+      const s = dateStr(dt); if (out.indexOf(s) === -1) out.push(s);
+    });
+    return out.sort();
   }
 
   function allDebts(sessions, fees) {
     let out = [];
     (sessions || []).forEach(s => { out = out.concat(sessionCalc(s).debts); });
-    (fees || []).forEach(f => { out = out.concat(feeCalc(f).debts); });
+    (fees || []).forEach(f => { out = out.concat(feeCalc(f, sessions).debts); });
     return out;
   }
 
@@ -303,8 +365,8 @@ table.tot td.get { color: var(--green); font-weight: 600; }
       if (c.payer) sum[c.payer].advanced += c.total;
     });
     (fees || []).forEach(f => {
-      const c = feeCalc(f);
-      PEOPLE.forEach(n => { sum[n].court += c.share; });
+      const c = feeCalc(f, sessions);
+      PEOPLE.forEach(n => { sum[n].court += c.due[n]; });
       if (c.payer) sum[c.payer].advanced += c.total;
     });
     allDebts(sessions, fees).forEach(d => { sum[d.from].owes += d.amt; sum[d.to].owed += d.amt; });
@@ -394,7 +456,7 @@ table.tot td.get { color: var(--green); font-weight: 600; }
   }
 
   const api = { PEOPLE, LABEL, COACH_FEE, COURT_RATE, DEFAULT_TIME, dateStr, parseDate, addDays, attendees,
-    HOURS_PER_CLASS, SUMMARY_FROM, sessionHours, seasonTopUp, courtBalance, offKind, sessionCalc, feeCalc, allDebts, reminderText, pairNet, personSummary, focusSession, missingFridays, makeSession };
+    HOURS_PER_CLASS, SUMMARY_FROM, sessionHours, seasonTopUp, feeSnapshot, parseDates, courtBalance, offKind, sessionCalc, feeCalc, allDebts, reminderText, pairNet, personSummary, focusSession, missingFridays, makeSession };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.TennisCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -657,20 +719,27 @@ function viewTotal() {
     : `<div class="empty">還沒輸入場地剩餘時數</div>`) +
     `<div class="s-foot"><button class="btn" data-act="editCourt">${bal ? '修改剩餘時數' : '輸入剩餘時數'}</button></div></div>`;
 
-  html += `<div class="sec-title">場地費（季租 · 每小時 ${money(C.COURT_RATE)} · 四人平分）</div>`;
+  html += `<div class="sec-title">場地費（季租 · 每小時 ${money(C.COURT_RATE)} · 依每堂出席分攤）</div>`;
   if (!fees.length) html += `<div class="card"><div class="empty">還沒有場地費紀錄</div></div>`;
   fees.forEach(f => {
-    const c = C.feeCalc(f), id = esc(f.id);
+    const c = C.feeCalc(f, sessions), id = esc(f.id);
     const payers = PEOPLE.map(n => `<button class="chip pay${c.payer === n ? ' on' : ''}" data-act="feePayer" data-id="${id}" data-name="${n}">${LABEL[n]}</button>`).join('');
-    let rows = '';
-    if (c.payer) rows = `<div class="lbl">還給 ${LABEL[c.payer]}</div>` + PEOPLE.filter(n => n !== c.payer).map(n => {
-      const paid = !!(f.paid && f.paid[n]);
-      return `<div class="row"><span class="grow">${LABEL[n]}</span><span class="num dim">${money(c.share)}</span>
-        <button class="pill${paid ? ' on' : ''}" data-act="feePaid" data-id="${id}" data-name="${n}">${paid ? '已還' : '未還'}</button></div>`;
+    const paid = f.paid || {};
+    const rows = PEOPLE.map(n => {
+      const cnt = c.dates.length ? `<span class="dim" style="font-size:13px"> · ${c.classes[n]} 堂</span>` : '';
+      let btn;
+      if (n === c.payer) btn = '<span class="dim" style="font-size:13px;min-width:76px;text-align:center">先付的人</span>';
+      else if (!c.payer) btn = `<span class="dim" style="font-size:13px;min-width:76px;text-align:center">${paid[n] ? '已繳' : '—'}</span>`;
+      else if (c.topup[n]) btn = `<button class="pill" data-act="feePaid" data-id="${id}" data-name="${n}">補 ${money(c.topup[n])}</button>`;
+      else btn = `<button class="pill${paid[n] ? ' on' : ''}" data-act="feePaid" data-id="${id}" data-name="${n}">${paid[n] ? '已繳' : '未繳'}</button>`;
+      return `<div class="row"><span class="grow">${LABEL[n]}${cnt}</span><span class="num">${money(c.due[n])}</span>${btn}</div>`;
     }).join('');
-    html += `<div class="card"><div class="fee-head"><b>${esc(f.label || '場地費')}</b><span class="dim num" style="font-size:14px;color:var(--label-2)">${c.hours} 小時</span><span class="t num">${money(c.total)}</span></div>
-      <div class="hint">每人 ${money(c.share)}</div>
-      <div class="lbl">誰先付的</div><div class="chips">${payers}</div>${rows}
+    const dateLine = c.dates.length ? c.dates.map(d => shortDate(d)).join('、') : '';
+    html += `<div class="card"><div class="fee-head"><b>${esc(f.label || '場地費')}</b><span class="dim num" style="font-size:14px;color:var(--label-2)">${c.dates.length ? c.dates.length + ' 堂 · ' : ''}${c.hours} 小時</span><span class="t num">${money(c.total)}</span></div>
+      ${dateLine ? `<div class="hint">${dateLine}</div>` : ''}
+      <div class="lbl">誰先付給場地</div><div class="chips">${payers}</div>
+      <div class="lbl">每人應繳${c.payer ? '（還給 ' + LABEL[c.payer] + '）' : ''}</div>${rows}
+      <div class="hint" style="padding-top:8px">${c.dates.length ? `每堂 ${money(c.perDate)} 由那堂有上課的人平分。請假要在繳費前到課表取消出席；繳費後才說不能來，不退款。` : '舊紀錄：四人平分。'}</div>
       <div class="s-foot"><button class="btn red" data-act="feeDel" data-id="${id}">刪除這筆</button></div></div>`;
   });
   html += `<button class="btn solid full" data-act="addFee">新增一季場地費</button>`;
@@ -750,18 +819,29 @@ const actions = {
     const up = {};
     p.items.forEach(x => {
       if (x.kind === 'coach' && getS(x.id)) up[`sessions/${x.id}/students/${x.from}/paid`] = true;
-      if (x.kind === 'court' && getF(x.id)) up[`courtFees/${x.id}/paid/${x.from}`] = true;
+      if (x.kind === 'court' && getF(x.id)) { up[`courtFees/${x.id}/paid/${x.from}`] = true; up[`courtFees/${x.id}/snap/${x.from}`] = C.feeSnapshot(getF(x.id), sessionList(), x.from); }
     });
     store.write(up).then(() => toast('已標成還清'));
   },
   feePayer(d) {
     const f = getF(d.id); if (!f) return;
-    const up = {}; up[`courtFees/${d.id}/payer`] = f.payer === d.name ? '' : d.name;
+    const next = f.payer === d.name ? '' : d.name;
+    const up = {}; up[`courtFees/${d.id}/payer`] = next;
+    if (next && !(f.snap && f.snap[next])) up[`courtFees/${d.id}/snap/${next}`] = C.feeSnapshot(f, sessionList(), next);
     store.write(up);
   },
   feePaid(d) {
     const f = getF(d.id); if (!f) return;
-    const up = {}; up[`courtFees/${d.id}/paid/${d.name}`] = !(f.paid && f.paid[d.name]);
+    const c = C.feeCalc(f, sessionList()), n = d.name, up = {};
+    if (c.topup[n]) {
+      if (!confirm(`${LABEL[n]} 已經補繳 ${money(c.topup[n])} 了嗎？`)) return;
+      up[`courtFees/${d.id}/snap/${n}`] = C.feeSnapshot(f, sessionList(), n);
+    } else if (f.paid && f.paid[n]) {
+      if (!confirm(`把 ${LABEL[n]} 改回未繳？之後會照目前出席重新計算。`)) return;
+      up[`courtFees/${d.id}/paid/${n}`] = false; up[`courtFees/${d.id}/snap/${n}`] = null;
+    } else {
+      up[`courtFees/${d.id}/paid/${n}`] = true; up[`courtFees/${d.id}/snap/${n}`] = C.feeSnapshot(f, sessionList(), n);
+    }
     store.write(up);
   },
   feeDel(d) {
@@ -791,29 +871,34 @@ const actions = {
   },
   addFee() {
     openSheet('新增一季場地費', `<div class="card"><div class="field"><label>名稱</label><input type="text" id="fLabel" placeholder="例如：2026 冬季" maxlength="30"></div>
-      <div class="field"><label>小時數</label><input type="number" id="fHours" inputmode="decimal" min="0" step="0.5" placeholder="例如 24"></div>
+      </div><div class="lbl" style="padding-left:16px">上課日期（點選這季租的日子）</div><div class="card">${datePicker()}</div><div class="card">
+      <div class="field"><label>堂數</label><input type="text" id="fHours" value="—" readonly tabindex="-1"></div>
       <div class="field"><label>總金額</label><input type="text" id="fTotal" value="—" readonly tabindex="-1"></div>${
         state.court ? '' : `<div class="field"><label>起算日</label><input type="date" id="fStart" value="${today()}"></div>`}</div>
-      <div class="sec-foot" id="fTopUp" style="margin:-4px 4px 4px">填好小時數後，這裡會顯示場地剩餘時數會變成多少。</div>
+      <div class="sec-foot" id="fTopUp" style="margin:-4px 4px 4px">填好日期後，這裡會顯示場地剩餘時數會變成多少。</div>
       <div class="lbl" style="padding-left:16px">誰先付的</div><div class="chips" style="padding:0 0 16px" id="fPayerBox">${
         PEOPLE.map(n => `<button class="chip pay" data-act="pickFeePayer" data-name="${n}">${LABEL[n]}</button>`).join('')}</div>
       <button class="btn solid full" data-act="saveFee">存起來</button>`);
   },
+  pickDate(d, el) { el.classList.toggle('on'); updateFeeForm(); },
   pickFeePayer(d, el) {
     document.querySelectorAll('#fPayerBox .chip').forEach(b => b.classList.toggle('on', b === el && !el.classList.contains('on')));
   },
   saveFee() {
     const label = document.getElementById('fLabel').value.trim();
-    const hours = Number(document.getElementById('fHours').value);
+    const dates = formDates();
+    const hours = dates.length * C.HOURS_PER_CLASS;
     const picked = document.querySelector('#fPayerBox .chip.on');
     if (!label) return toast('請填名稱');
-    if (!(hours > 0)) return toast('請填小時數');
+    if (!dates.length) return toast('請填上課日期');
     const id = 'fee_' + Date.now().toString(36);
     const paid = {}; PEOPLE.forEach(n => { paid[n] = false; });
     const up = {};
     const top = topUpPreview(hours);
     up['court'] = { hours: top.hours, setAt: top.setAt };
-    up['courtFees/' + id] = { id, label, hours, rate: C.COURT_RATE, total: hours * C.COURT_RATE, payer: picked ? picked.dataset.name : '', paid, createdAt: Date.now() };
+    const fee = { id, label, dates, hours, rate: C.COURT_RATE, total: hours * C.COURT_RATE, payer: picked ? picked.dataset.name : '', paid, createdAt: Date.now() };
+    if (fee.payer) { fee.snap = {}; fee.snap[fee.payer] = C.feeSnapshot(fee, sessionList(), fee.payer); }
+    up['courtFees/' + id] = fee;
     closeSheet();
     store.write(up).then(() => toast(`場地剩餘時數更新為 ${top.hours} 小時`));
   },
@@ -832,14 +917,42 @@ const actions = {
   closeSheet() { closeSheet(); }
 };
 
+// 預設日期：今天以後、還沒被其他季用掉、沒標停課的 10 堂
+function suggestDates() {
+  const used = {}; feeList().forEach(f => (f.dates || []).forEach(d => { used[d] = 1; }));
+  return sessionList().filter(s => s.date > today() && !s.rainout && !used[s.date]).slice(0, 10).map(s => s.date);
+}
+// 選日期：列出今天以後、還沒被其他季用掉的課，點一下選／取消；預設選好接下來 10 堂沒停課的
+function datePicker() {
+  const used = {}; feeList().forEach(f => (f.dates || []).forEach(d => { used[d] = 1; }));
+  const list = sessionList().filter(s => s.date > today() && !used[s.date]);
+  const pre = {}; suggestDates().forEach(d => { pre[d] = 1; });
+  if (!list.length) return '<div class="empty">課表上沒有可以選的日期</div>';
+  let html = '', month = '';
+  list.forEach(s => {
+    const m = s.date.slice(0, 7);
+    if (m !== month) { html += (month ? '</div>' : '') + `<div class="lbl" style="padding:10px 16px 6px">${Number(m.slice(0, 4))} 年 ${Number(m.slice(5, 7))} 月</div><div class="chips date-pick">`; month = m; }
+    const off = s.rainout ? (s.offType === 'stop' ? '停課' : '雨天') : '';
+    html += `<button class="chip pay${pre[s.date] ? ' on' : ''}" data-act="pickDate" data-date="${s.date}">${shortDate(s.date)}${off ? `<small>${off}</small>` : ''}</button>`;
+  });
+  return `<div id="fDatePick" style="padding-bottom:12px">${html}</div></div>`;
+}
+function formDates() { return [...document.querySelectorAll('#fDatePick .chip.on')].map(b => b.dataset.date).sort(); }
+function updateFeeForm() {
+  const dates = formDates(), hrs = dates.length * C.HOURS_PER_CLASS;
+  const h = document.getElementById('fHours'), t = document.getElementById('fTotal');
+  if (h) h.value = dates.length ? `${dates.length} 堂（${hrs} 小時）` : '—';
+  if (t) t.value = dates.length ? money(hrs * C.COURT_RATE) : '—';
+  showTopUp();
+}
 function topUpPreview(hours) {
   const st = document.getElementById('fStart');
   return C.seasonTopUp(sessionList(), state.court, hours, (st && st.value) || today(), Date.now());
 }
 function showTopUp() {
   const el = document.getElementById('fTopUp'); if (!el) return;
-  const hours = Number(document.getElementById('fHours').value);
-  if (!(hours > 0)) { el.textContent = '填好小時數後，這裡會顯示場地剩餘時數會變成多少。'; return; }
+  const hours = formDates().length * C.HOURS_PER_CLASS;
+  if (!(hours > 0)) { el.textContent = '填好日期後，這裡會顯示場地剩餘時數會變成多少。'; return; }
   const t = topUpPreview(hours);
   el.textContent = t.hadBalance
     ? `場地剩餘時數：目前 ${t.before} 小時 + 新買 ${hours} 小時 = ${t.hours} 小時。`
@@ -848,6 +961,7 @@ function showTopUp() {
 function openSheet(title, body) {
   document.getElementById('sheet').innerHTML = `<div class="sheet-top"><button data-act="closeSheet">取消</button><b>${title}</b><span style="width:34px"></span></div>${body}`;
   document.getElementById('sheetBg').classList.add('open');
+  if (document.getElementById('fDates')) updateFeeForm();
 }
 function closeSheet() { document.getElementById('sheetBg').classList.remove('open'); }
 let toastTimer;
@@ -875,11 +989,7 @@ document.addEventListener('change', e => {
   }
 });
 document.addEventListener('input', e => {
-  if (e.target.id === 'fHours' || e.target.id === 'fStart') showTopUp();
-  if (e.target.id === 'fHours') {
-    const h = Number(e.target.value);
-    document.getElementById('fTotal').value = h > 0 ? `${money(h * C.COURT_RATE)}（每人 ${money(Math.round(h * C.COURT_RATE / PEOPLE.length))}）` : '—';
-  }
+  if (e.target.id === 'fDates' || e.target.id === 'fStart') updateFeeForm();
 });
 document.addEventListener('focusout', e => {
   if (e.target.classList && e.target.classList.contains('note')) setTimeout(() => { if (pendingRender) render(); }, 0);
