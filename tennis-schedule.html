@@ -417,6 +417,7 @@ const firebaseConfig = {
 };
 // 預覽模式：本機開啟（localhost / file）一律不寫入正式資料，除非網址加 #live；線上版加 ?demo 或 #demo 也可進預覽
 const IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname);
+const MONTHS_AHEAD = 3;   // 課表月曆往後顯示幾個月
 const DEMO = new URLSearchParams(location.search).has('demo') || location.hash.includes('demo') || (IS_LOCAL && !location.hash.includes('live'));
 
 /* ── 狀態 ── */
@@ -485,7 +486,10 @@ function setLive(on, text) {
 }
 // 往後 8 週的週五自動補上（固定 id，兩支手機同時開也不會重複）
 function ensureFridays() {
-  const miss = C.missingFridays(sessionList(), today(), 56);
+  // 週五自動補到月曆最後一個月的月底
+  const t = C.parseDate(today());
+  const end = new Date(t.getFullYear(), t.getMonth() + MONTHS_AHEAD + 1, 0);
+  const miss = C.missingFridays(sessionList(), today(), Math.round((end - t) / 86400000));
   if (!miss.length) return;
   const up = {};
   miss.forEach(d => { const s = C.makeSession(d); up['sessions/' + s.id] = s; });
@@ -595,8 +599,8 @@ function viewList() {
   const byDate = {};
   list.forEach(s => { if (!byDate[s.date]) byDate[s.date] = s; });
   const first = list.length && list[0].date.slice(0, 7) < cur ? list[0].date.slice(0, 7) : cur;
-  // 最新顯示到「本月 + 1」，由新到舊往下排
-  const nx = new Date(Number(cur.slice(0, 4)), Number(cur.slice(5, 7)), 1);
+  // 最新顯示到「本月 + MONTHS_AHEAD」，由新到舊往下排
+  const nx = new Date(Number(cur.slice(0, 4)), Number(cur.slice(5, 7)) - 1 + MONTHS_AHEAD, 1);
   const last = nx.getFullYear() + '-' + String(nx.getMonth() + 1).padStart(2, '0');
   const cards = [];
   let html = `<div class="legend"><span><i class="cls"></i>上課</span><span><i class="plan"></i>預定</span><span><i class="stop"></i>停課</span><span><i class="rain"></i>雨天</span><span><i style="background:var(--red);border-radius:50%;width:9px;height:9px"></i>有人未還</span></div>`;
