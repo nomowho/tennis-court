@@ -750,7 +750,7 @@ function viewTotal() {
       ${dateLine ? `<div class="hint">${dateLine}</div>` : ''}
       <div class="lbl">付款方式</div><div class="chips">
         <button class="chip${c.self ? '' : ' on'}" data-act="feeMode" data-id="${id}" data-mode="shared">一人先付</button>
-        <button class="chip${c.self ? ' on' : ''}" data-act="feeMode" data-id="${id}" data-mode="self">各自繳給場地</button></div>
+        <button class="chip${c.self ? ' on' : ''}" data-act="feeMode" data-id="${id}" data-mode="self">各自繳</button></div>
       ${c.self ? '' : `<div class="lbl">誰先付給場地</div><div class="chips">${payers}</div>`}
       <div class="lbl">每人應繳${c.self ? '（各自繳給場地，不互相欠錢）' : c.payer ? '（還給 ' + LABEL[c.payer] + '）' : ''}</div>${rows}
       <div class="hint" style="padding-top:8px">${c.dates.length ? `每堂 ${money(c.perDate)} 由那堂有上課的人平分。請假要在繳費前到課表取消出席；繳費後才說不能來，不退款。` : '舊紀錄：四人平分。'}${c.self ? '「已繳」只是記錄，不會列入欠款或催款訊息。' : ''}</div>
@@ -900,7 +900,7 @@ const actions = {
       <div class="sec-foot" id="fTopUp" style="margin:-4px 4px 4px">填好日期後，這裡會顯示場地剩餘時數會變成多少。</div>
       <div class="lbl" style="padding-left:16px">付款方式</div><div class="chips" style="padding:0 0 16px" id="fModeBox">
         <button class="chip on" data-act="pickFeeMode" data-mode="shared">一人先付</button>
-        <button class="chip" data-act="pickFeeMode" data-mode="self">各自繳給場地</button></div>
+        <button class="chip" data-act="pickFeeMode" data-mode="self">各自繳</button></div>
       <div id="fPayerWrap"><div class="lbl" style="padding-left:16px">誰先付的</div><div class="chips" style="padding:0 0 16px" id="fPayerBox">${
         PEOPLE.map(n => `<button class="chip pay" data-act="pickFeePayer" data-name="${n}">${LABEL[n]}</button>`).join('')}</div></div>
       <button class="btn solid full" data-act="saveFee">存起來</button>`);
