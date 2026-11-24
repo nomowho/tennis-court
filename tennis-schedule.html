@@ -262,7 +262,8 @@ table.tot td.get { color: var(--green); font-weight: 600; }
     const dates = Array.isArray(f.dates) ? f.dates.slice().sort() : [];
     const hours = dates.length ? dates.length * HOURS_PER_CLASS : (Number(f.hours) || 0);
     const total = hours * rate;
-    const payer = isPerson(f.payer) ? f.payer : '';
+    const self = f.mode === 'self';   // 各自繳給場地：沒有代墊人、不產生欠款，只記每人該繳多少、繳了沒
+    const payer = !self && isPerson(f.payer) ? f.payer : '';
     const paid = f.paid || {}, snap = f.snap || {};
     const due = {}, classes = {};
     PEOPLE.forEach(n => { due[n] = 0; classes[n] = 0; });
@@ -283,7 +284,14 @@ table.tot td.get { color: var(--green); font-weight: 600; }
     PEOPLE.forEach(n => { due[n] = Math.round(due[n]); });
     const share = Math.round(total / PEOPLE.length);
     let status, unpaid = [], topup = {}, debts = [];
-    if (!payer) status = 'needPayer';
+    if (self) {
+      PEOPLE.forEach(n => {
+        if (!paid[n]) { if (due[n] > 0) unpaid.push(n); return; }
+        const locked = snap[n] && snap[n].amt != null ? Number(snap[n].amt) : due[n];
+        if (due[n] > locked) topup[n] = due[n] - locked;
+      });
+      status = 'self';
+    } else if (!payer) status = 'needPayer';
     else {
       PEOPLE.forEach(n => {
         if (n === payer) return;
@@ -293,7 +301,7 @@ table.tot td.get { color: var(--green); font-weight: 600; }
       });
       status = debts.length ? 'open' : 'settled';
     }
-    return { hours, rate, total, perDate, dates, due, classes, share, payer, unpaid, topup, debts, status };
+    return { hours, rate, total, perDate, dates, due, classes, share, payer, self, unpaid, topup, debts, status };
   }
 
   // 繳費當下的鎖定紀錄：金額＋目前算在他頭上的日期
@@ -728,7 +736,10 @@ function viewTotal() {
     const rows = PEOPLE.map(n => {
       const cnt = c.dates.length ? `<span class="dim" style="font-size:13px"> · ${c.classes[n]} 堂</span>` : '';
       let btn;
-      if (n === c.payer) btn = '<span class="dim" style="font-size:13px;min-width:76px;text-align:center">先付的人</span>';
+      if (c.self) btn = c.topup[n]
+        ? `<button class="pill" data-act="feePaid" data-id="${id}" data-name="${n}">補 ${money(c.topup[n])}</button>`
+        : `<button class="pill${paid[n] ? ' on' : ''}" data-act="feePaid" data-id="${id}" data-name="${n}">${paid[n] ? '已繳' : '未繳'}</button>`;
+      else if (n === c.payer) btn = '<span class="dim" style="font-size:13px;min-width:76px;text-align:center">先付的人</span>';
       else if (!c.payer) btn = `<span class="dim" style="font-size:13px;min-width:76px;text-align:center">${paid[n] ? '已繳' : '—'}</span>`;
       else if (c.topup[n]) btn = `<button class="pill" data-act="feePaid" data-id="${id}" data-name="${n}">補 ${money(c.topup[n])}</button>`;
       else btn = `<button class="pill${paid[n] ? ' on' : ''}" data-act="feePaid" data-id="${id}" data-name="${n}">${paid[n] ? '已繳' : '未繳'}</button>`;
@@ -737,9 +748,12 @@ function viewTotal() {
     const dateLine = c.dates.length ? c.dates.map(d => shortDate(d)).join('、') : '';
     html += `<div class="card"><div class="fee-head"><b>${esc(f.label || '場地費')}</b><span class="dim num" style="font-size:14px;color:var(--label-2)">${c.dates.length ? c.dates.length + ' 堂 · ' : ''}${c.hours} 小時</span><span class="t num">${money(c.total)}</span></div>
       ${dateLine ? `<div class="hint">${dateLine}</div>` : ''}
-      <div class="lbl">誰先付給場地</div><div class="chips">${payers}</div>
-      <div class="lbl">每人應繳${c.payer ? '（還給 ' + LABEL[c.payer] + '）' : ''}</div>${rows}
-      <div class="hint" style="padding-top:8px">${c.dates.length ? `每堂 ${money(c.perDate)} 由那堂有上課的人平分。請假要在繳費前到課表取消出席；繳費後才說不能來，不退款。` : '舊紀錄：四人平分。'}</div>
+      <div class="lbl">付款方式</div><div class="chips">
+        <button class="chip${c.self ? '' : ' on'}" data-act="feeMode" data-id="${id}" data-mode="shared">一人先付</button>
+        <button class="chip${c.self ? ' on' : ''}" data-act="feeMode" data-id="${id}" data-mode="self">各自繳給場地</button></div>
+      ${c.self ? '' : `<div class="lbl">誰先付給場地</div><div class="chips">${payers}</div>`}
+      <div class="lbl">每人應繳${c.self ? '（各自繳給場地，不互相欠錢）' : c.payer ? '（還給 ' + LABEL[c.payer] + '）' : ''}</div>${rows}
+      <div class="hint" style="padding-top:8px">${c.dates.length ? `每堂 ${money(c.perDate)} 由那堂有上課的人平分。請假要在繳費前到課表取消出席；繳費後才說不能來，不退款。` : '舊紀錄：四人平分。'}${c.self ? '「已繳」只是記錄，不會列入欠款或催款訊息。' : ''}</div>
       <div class="s-foot"><button class="btn red" data-act="feeDel" data-id="${id}">刪除這筆</button></div></div>`;
   });
   html += `<button class="btn solid full" data-act="addFee">新增一季場地費</button>`;
@@ -830,6 +844,14 @@ const actions = {
     if (next && !(f.snap && f.snap[next])) up[`courtFees/${d.id}/snap/${next}`] = C.feeSnapshot(f, sessionList(), next);
     store.write(up);
   },
+  feeMode(d) {
+    const f = getF(d.id); if (!f) return;
+    const next = d.mode === 'self' ? 'self' : 'shared';
+    if ((f.mode === 'self' ? 'self' : 'shared') === next) return;
+    const up = {}; up[`courtFees/${d.id}/mode`] = next;
+    // 換回「一人先付」時，已有人標過已繳但沒有代墊人 → 不動它，等選代墊人再算
+    store.write(up);
+  },
   feePaid(d) {
     const f = getF(d.id); if (!f) return;
     const c = C.feeCalc(f, sessionList()), n = d.name, up = {};
@@ -876,11 +898,18 @@ const actions = {
       <div class="field"><label>總金額</label><input type="text" id="fTotal" value="—" readonly tabindex="-1"></div>${
         state.court ? '' : `<div class="field"><label>起算日</label><input type="date" id="fStart" value="${today()}"></div>`}</div>
       <div class="sec-foot" id="fTopUp" style="margin:-4px 4px 4px">填好日期後，這裡會顯示場地剩餘時數會變成多少。</div>
-      <div class="lbl" style="padding-left:16px">誰先付的</div><div class="chips" style="padding:0 0 16px" id="fPayerBox">${
-        PEOPLE.map(n => `<button class="chip pay" data-act="pickFeePayer" data-name="${n}">${LABEL[n]}</button>`).join('')}</div>
+      <div class="lbl" style="padding-left:16px">付款方式</div><div class="chips" style="padding:0 0 16px" id="fModeBox">
+        <button class="chip on" data-act="pickFeeMode" data-mode="shared">一人先付</button>
+        <button class="chip" data-act="pickFeeMode" data-mode="self">各自繳給場地</button></div>
+      <div id="fPayerWrap"><div class="lbl" style="padding-left:16px">誰先付的</div><div class="chips" style="padding:0 0 16px" id="fPayerBox">${
+        PEOPLE.map(n => `<button class="chip pay" data-act="pickFeePayer" data-name="${n}">${LABEL[n]}</button>`).join('')}</div></div>
       <button class="btn solid full" data-act="saveFee">存起來</button>`);
   },
   pickDate(d, el) { el.classList.toggle('on'); updateFeeForm(); },
+  pickFeeMode(d, el) {
+    document.querySelectorAll('#fModeBox .chip').forEach(b => b.classList.toggle('on', b === el));
+    document.getElementById('fPayerWrap').style.display = d.mode === 'self' ? 'none' : '';
+  },
   pickFeePayer(d, el) {
     document.querySelectorAll('#fPayerBox .chip').forEach(b => b.classList.toggle('on', b === el && !el.classList.contains('on')));
   },
@@ -888,7 +917,8 @@ const actions = {
     const label = document.getElementById('fLabel').value.trim();
     const dates = formDates();
     const hours = dates.length * C.HOURS_PER_CLASS;
-    const picked = document.querySelector('#fPayerBox .chip.on');
+    const self = !!document.querySelector('#fModeBox .chip.on[data-mode="self"]');
+    const picked = self ? null : document.querySelector('#fPayerBox .chip.on');
     if (!label) return toast('請填名稱');
     if (!dates.length) return toast('請填上課日期');
     const id = 'fee_' + Date.now().toString(36);
@@ -896,7 +926,7 @@ const actions = {
     const up = {};
     const top = topUpPreview(hours);
     up['court'] = { hours: top.hours, setAt: top.setAt };
-    const fee = { id, label, dates, hours, rate: C.COURT_RATE, total: hours * C.COURT_RATE, payer: picked ? picked.dataset.name : '', paid, createdAt: Date.now() };
+    const fee = { id, label, dates, hours, rate: C.COURT_RATE, total: hours * C.COURT_RATE, payer: picked ? picked.dataset.name : '', mode: self ? 'self' : 'shared', paid, createdAt: Date.now() };
     if (fee.payer) { fee.snap = {}; fee.snap[fee.payer] = C.feeSnapshot(fee, sessionList(), fee.payer); }
     up['courtFees/' + id] = fee;
     closeSheet();
